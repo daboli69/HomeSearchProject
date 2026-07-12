@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#22303C">
+<title>BurbScout — Franklin County home truth</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75,500..800&family=Public+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F7F6F2; --card:#FFFFFF; --ink:#22303C; --ink2:#5B6B78;
+  --pine:#1F7A5C; --pine-soft:#E4F1EB;      /* money / his */
+  --plum:#7C4D8F; --plum-soft:#F1E9F5;      /* schools / hers */
+  --amber:#C97F10; --amber-soft:#FBF1DE;    /* warnings / mismatch */
+  --brick:#B3402E; --brick-soft:#F9E8E4;    /* crime / negative */
+  --line:#E3E1DA; --rad:14px;
+  --disp:'Archivo',system-ui,sans-serif; --body:'Public Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--body);background:var(--paper);color:var(--ink);font-size:15px;line-height:1.45;
+  padding-bottom:calc(64px + env(safe-area-inset-bottom));-webkit-tap-highlight-color:transparent}
+h1,h2,h3{font-family:var(--disp);font-stretch:75%;letter-spacing:.02em;line-height:1.1}
+h1{font-size:22px;font-weight:800;text-transform:uppercase}
+h2{font-size:17px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+h3{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2)}
+.money,.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+header{position:sticky;top:0;z-index:900;background:var(--ink);color:#fff;
+  padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:baseline;gap:10px}
+header h1{color:#fff}
+header .sub{font-size:11px;color:#9FB0BC;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em}
+main{max-width:760px;margin:0 auto}
+.tab{display:none;padding:14px 14px 24px}
+.tab.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--rad);padding:14px;margin-bottom:12px}
+.card h2{margin-bottom:8px}
+label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin:8px 0 3px;text-transform:uppercase;letter-spacing:.05em}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;
+  font-family:var(--body);font-size:16px;color:var(--ink)}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--pine);outline-offset:1px}
+textarea{min-height:74px}
+.row{display:flex;gap:10px}.row>*{flex:1;min-width:0}
+button{font-family:var(--disp);font-stretch:75%;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  border:none;border-radius:10px;padding:12px 14px;font-size:14px;cursor:pointer}
+.btn-primary{background:var(--pine);color:#fff;width:100%}
+.btn-ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
+.btn-plum{background:var(--plum);color:#fff}
+.btn-sm{padding:7px 10px;font-size:12px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--ink2)}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.badge{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;border-radius:6px;padding:2px 7px;letter-spacing:.03em}
+.b-pine{background:var(--pine-soft);color:var(--pine)} .b-plum{background:var(--plum-soft);color:var(--plum)}
+.b-amber{background:var(--amber-soft);color:var(--amber)} .b-brick{background:var(--brick-soft);color:var(--brick)}
+.b-grey{background:#EEF0F2;color:var(--ink2)}
+
+/* signature: the surveyor's stamp for district mismatch */
+.stamp{border:2.5px solid var(--amber);color:var(--amber);border-radius:8px;padding:10px 12px;margin:10px 0;
+  font-family:var(--mono);font-size:12.5px;font-weight:600;transform:rotate(-1.2deg);background:var(--amber-soft)}
+.stamp b{display:block;font-size:14px;letter-spacing:.12em;margin-bottom:3px}
+.stamp.ok{border-color:var(--pine);color:var(--pine);background:var(--pine-soft);transform:rotate(-.6deg)}
+
+/* signature: the true-monthly ledger */
+.ledger{font-family:var(--mono);font-size:14px}
+.ledger .li{display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed var(--line)}
+.ledger .li span:first-child{color:var(--ink2)}
+.ledger .li.total{border-top:2.5px solid var(--ink);border-bottom:3px double var(--ink);font-weight:600;font-size:17px;padding:10px 2px}
+.ledger .li.total span:first-child{color:var(--ink)}
+.ledger .sub{font-size:11px;color:var(--ink2);padding:2px 2px 8px}
+
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.kv .cell{background:var(--paper);border-radius:10px;padding:8px 10px}
+.kv .cell b{display:block;font-family:var(--mono);font-size:15px}
+.kv .cell i{font-style:normal;font-size:10.5px;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em}
+.note{font-size:12px;color:var(--ink2);margin-top:6px}
+.warn{font-size:12.5px;background:var(--amber-soft);color:#7c5107;border-radius:10px;padding:9px 11px;margin:8px 0}
+.err{font-size:12.5px;background:var(--brick-soft);color:var(--brick);border-radius:10px;padding:9px 11px;margin:8px 0}
+
+nav{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:var(--ink);display:flex;
+  padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;color:#8FA1AF;border-radius:0;padding:10px 2px 8px;font-size:10.5px;letter-spacing:.06em;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button .ic{font-size:19px;line-height:1}
+nav button.on{color:#fff}
+nav button.on .ic{transform:translateY(-1px)}
+
+#map{height:62vh;min-height:380px;border-radius:var(--rad);border:1px solid var(--line)}
+.map-tools{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 6px}
+.leaflet-container{font-family:var(--body)}
+details{border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-top:10px;background:#fff}
+summary{font-weight:700;font-size:13px;cursor:pointer;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em}
+table.raw{width:100%;font-size:11.5px;font-family:var(--mono);margin-top:8px;border-collapse:collapse}
+table.raw td{padding:3px 4px;border-bottom:1px solid var(--line);word-break:break-word}
+table.raw td:first-child{color:var(--ink2);width:44%}
+
+.home-item{border:1px solid var(--line);border-radius:var(--rad);background:#fff;padding:12px;margin-bottom:10px}
+.home-item .top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.home-item .price{font-family:var(--mono);font-weight:600;font-size:17px}
+.home-item .addr{font-weight:700;font-size:15px}
+.home-item .meta{font-size:12px;color:var(--ink2);margin-top:2px}
+.ratings{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.rate{display:flex;gap:2px}
+.rate button{background:none;padding:2px;font-size:18px;line-height:1}
+.score-ring{font-family:var(--mono);font-weight:600;border-radius:10px;padding:6px 10px;font-size:15px;text-align:center;min-width:64px}
+.slider-row{display:flex;align-items:center;gap:10px;margin:6px 0}
+.slider-row label{margin:0;flex:1}
+.slider-row input[type=range]{flex:2;padding:0}
+.slider-row output{font-family:var(--mono);font-size:12px;width:34px;text-align:right}
+.gauge{height:10px;border-radius:6px;background:linear-gradient(90deg,var(--brick),var(--amber),var(--pine));position:relative;margin:10px 0 4px}
+.gauge i{position:absolute;top:-4px;width:4px;height:18px;background:var(--ink);border-radius:2px}
+.legend{font-size:11px;color:var(--ink2);display:flex;justify-content:space-between}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--pine);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom));z-index:2000;
+  background:var(--ink);color:#fff;border-radius:12px;padding:10px 16px;font-size:13px;max-width:88vw;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.grant{border-left:4px solid var(--pine);padding:10px 12px;background:#fff;border-radius:0 12px 12px 0;border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:10px}
+.grant h3{color:var(--ink)}
+.grant a{color:var(--pine);font-weight:700}
+.pick-list{position:absolute;z-index:1200;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.18);max-width:92vw}
+.pick-list button{display:block;width:100%;text-align:left;background:none;color:var(--ink);font-family:var(--body);text-transform:none;letter-spacing:0;font-weight:500;font-size:14px;padding:11px 14px;border-bottom:1px solid var(--line);border-radius:0}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>BurbScout</h1>
+  <span class="sub">Franklin Co. house truth · his &amp; hers</span>
+</header>
+
+<main>
+
+<!-- ============ ANALYZE ============ -->
+<section id="tab-analyze" class="tab on">
+  <div class="card">
+    <h2>Analyze a home</h2>
+    <p class="note">Paste the address from any Zillow / Realtor / MLS listing. BurbScout pulls the county's own records — the stuff the listing doesn't show.</p>
+    <label for="addr-in">Address</label>
+    <div class="row" style="position:relative">
+      <input id="addr-in" placeholder="123 Main St, Columbus OH" autocomplete="street-address">
+      <div id="addr-picks" class="pick-list" style="display:none"></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div><label for="list-price">List price ($)</label><input id="list-price" inputmode="numeric" placeholder="400000"></div>
+      <div><label for="list-sqft">Sq ft (from listing)</label><input id="list-sqft" inputmode="numeric" placeholder="1800"></div>
+    </div>
+    <button class="btn-primary" style="margin-top:12px" onclick="analyze()">Pull county records</button>
+  </div>
+  <div id="analyze-out"></div>
+</section>
+
+<!-- ============ COSTS ============ -->
+<section id="tab-costs" class="tab">
+  <div class="card">
+    <h2>What it really costs</h2>
+    <p class="note">The sticker price is the smallest surprise. This is everything, monthly and at the closing table — FHA and conventional side by side.</p>
+    <div class="row">
+      <div><label for="c-price">Purchase price</label><input id="c-price" inputmode="numeric" value="400000"></div>
+      <div><label for="c-rate">Interest rate %</label><input id="c-rate" inputmode="decimal" value="6.5"></div>
+    </div>
+    <div class="row">
+      <div><label for="c-down-conv">Conv. down %</label><input id="c-down-conv" inputmode="decimal" value="5"></div>
+      <div><label for="c-down-fha">FHA down %</label><input id="c-down-fha" inputmode="decimal" value="3.5"></div>
+    </div>
+    <div class="row">
+      <div><label for="c-taxrate">Property tax %/yr <span id="c-taxsrc" class="badge b-grey">est.</span></label><input id="c-taxrate" inputmode="decimal" value="2.0"></div>
+      <div><label for="c-ins">Insurance $/yr</label><input id="c-ins" inputmode="numeric" value="1400"></div>
+    </div>
+    <div class="row">
+      <div><label for="c-hoa">HOA $/mo</label><input id="c-hoa" inputmode="numeric" value="0"></div>
+      <div><label for="c-pmi">PMI rate %/yr (conv.)</label><input id="c-pmi" inputmode="decimal" value="0.55"></div>
+    </div>
+    <p class="note">Ohio taxes bill off the county's assessed value, not your purchase price — the % here is an <b>effective</b> rate. When you analyze a home, BurbScout fills this from the parcel's actual district when it can. Always verify on the Auditor's site before you write an offer.</p>
+    <button class="btn-primary" style="margin-top:8px" onclick="calcCosts()">Run the numbers</button>
+  </div>
+  <div id="costs-out"></div>
+</section>
+
+<!-- ============ MAP ============ -->
+<section id="tab-map" class="tab">
+  <div class="map-tools">
+    <button class="chip" id="ly-crime" onclick="toggleCrime()">🔥 Crime heat</button>
+    <button class="chip" id="ly-sketch" onclick="scanSketch()">🚩 Sketch signals</button>
+    <button class="chip" id="ly-up" onclick="scanUp()">🌈 Up &amp; coming</button>
+    <button class="chip" id="ly-ponds" onclick="scanPonds()">🎣 Ponds</button>
+    <button class="chip" id="ly-homes" onclick="plotSaved()">🏠 Our list</button>
+  </div>
+  <div id="map"></div>
+  <p class="note">Crime heat = Columbus PD incident density (city jurisdiction only — suburbs run their own departments, so blank ≠ safe there). Signal scans cover the map view you're looking at; zoom to an area first, then tap a scan.</p>
+  <div id="map-out"></div>
+</section>
+
+<!-- ============ LIST ============ -->
+<section id="tab-list" class="tab">
+  <div class="card" id="sb-setup">
+    <h2>Our shared list</h2>
+    <p class="note">One list, two phones. Uses your Supabase project (same drill as Par-Lay). Enter it once per phone.</p>
+    <label for="sb-url">Supabase URL</label><input id="sb-url" placeholder="https://xxxx.supabase.co">
+    <label for="sb-key">Anon key</label><input id="sb-key" placeholder="eyJ...">
+    <label for="sb-house">Household code (same on both phones)</label><input id="sb-house" placeholder="e.g. tandg-2026-fishing">
+    <label>Who is this phone?</label>
+    <div class="chips">
+      <button class="chip" id="who-him" onclick="setWho('him')">Him</button>
+      <button class="chip" id="who-her" onclick="setWho('her')">Her</button>
+    </div>
+    <button class="btn-primary" onclick="connectSB()">Connect</button>
+  </div>
+  <div id="list-controls" style="display:none">
+    <div class="card">
+      <h2>Add a home</h2>
+      <label for="h-url">Listing URL (Zillow / Realtor / anywhere)</label><input id="h-url" placeholder="https://www.zillow.com/homedetails/...">
+      <label for="h-addr">Address</label><input id="h-addr" placeholder="Auto-fills from Analyze tab">
+      <div class="row">
+        <div><label for="h-price">Price</label><input id="h-price" inputmode="numeric"></div>
+        <div><label for="h-sqft">Sq ft</label><input id="h-sqft" inputmode="numeric"></div>
+      </div>
+      <div class="row">
+        <div><label for="h-beds">Beds</label><input id="h-beds" inputmode="numeric"></div>
+        <div><label for="h-baths">Baths</label><input id="h-baths" inputmode="decimal"></div>
+        <div><label for="h-garage">Garage</label><select id="h-garage"><option value="">—</option><option>None</option><option>1-car</option><option>2-car</option><option>3+ car</option></select></div>
+      </div>
+      <div class="row">
+        <div><label for="h-type">Type</label><select id="h-type"><option>House</option><option>Condo</option><option>Townhome</option><option>Multi-family</option><option>Mobile</option><option>Farm</option></select></div>
+        <div><label for="h-stories">Stories</label><select id="h-stories"><option value="">—</option><option>Ranch (1)</option><option>1.5</option><option>2</option><option>3+</option><option>Split</option></select></div>
+        <div><label for="h-status">Status</label><select id="h-status"><option>Active</option><option>Pending</option><option>Contingent</option></select></div>
+      </div>
+      <div class="row">
+        <div><label for="h-sale-type">Sale type</label><select id="h-sale-type"><option>Standard</option><option>New build</option><option>Foreclosure</option><option>Auction</option><option>Short sale</option></select></div>
+        <div><label for="h-listed">Listed date</label><input id="h-listed" type="date"></div>
+      </div>
+      <label for="h-desc">Paste the listing description (optional — auto-detects roof / HVAC / remodel)</label>
+      <textarea id="h-desc" placeholder="Paste the agent's blurb here…"></textarea>
+      <div class="row">
+        <div><label for="h-roof">Roof year</label><input id="h-roof" inputmode="numeric" placeholder="?"></div>
+        <div><label for="h-hvac">HVAC year</label><input id="h-hvac" inputmode="numeric" placeholder="?"></div>
+        <div><label for="h-cond">Condition</label><select id="h-cond"><option value="">—</option><option>Remodeled</option><option>Updated</option><option>Original</option><option>Needs work</option></select></div>
+      </div>
+      <div id="h-parcel-note" class="note"></div>
+      <button class="btn-primary" style="margin-top:10px" onclick="saveHome()">Save to our list</button>
+    </div>
+    <div class="card">
+      <h2>Sort &amp; filter</h2>
+      <div class="chips" id="list-filters">
+        <button class="chip on" data-f="all">All</button>
+        <button class="chip" data-f="active">Active</button>
+        <button class="chip" data-f="both-liked">Both ❤️</button>
+        <button class="chip" data-f="mismatch">District ⚠️</button>
+      </div>
+      <select id="list-sort" onchange="renderList()">
+        <option value="created_at">Newest saved</option>
+        <option value="price">Price (low → high)</option>
+        <option value="monthly_est">Monthly cost (low → high)</option>
+        <option value="deal_score">Deal score (best first)</option>
+        <option value="days">Days on market (longest)</option>
+        <option value="roof_year">Roof (newest)</option>
+        <option value="hvac_year">HVAC (newest)</option>
+      </select>
+    </div>
+    <div id="list-out"></div>
+  </div>
+</section>
+
+<!-- ============ GRANTS ============ -->
+<section id="tab-grants" class="tab">
+  <div class="card">
+    <h2>Do we qualify?</h2>
+    <p class="note">Ohio's first-time-buyer help is real money — most people just never apply. Enter income both ways and see which lanes open up.</p>
+    <div class="row">
+      <div><label for="g-his">His income $/yr</label><input id="g-his" inputmode="numeric"></div>
+      <div><label for="g-hers">Her income $/yr</label><input id="g-hers" inputmode="numeric"></div>
+    </div>
+    <div class="row">
+      <div><label for="g-price">Target price</label><input id="g-price" inputmode="numeric" value="400000"></div>
+      <div><label for="g-limit">OHFA income limit (Franklin Co.)</label><input id="g-limit" inputmode="numeric" value="129000"></div>
+    </div>
+    <p class="note">⚠️ The limit box is editable on purpose — OHFA updates income &amp; price limits every year. Pull today's numbers from <a href="https://www.ohiohome.org/homebuyers/incomelimits.aspx" target="_blank" rel="noopener">ohiohome.org</a> before counting on anything.</p>
+    <button class="btn-primary" onclick="checkGrants()">Check programs</button>
+  </div>
+  <div id="grants-out"></div>
+</section>
+
+</main>
+
+<nav>
+  <button class="on" data-tab="analyze" onclick="go('analyze',this)"><span class="ic">🔎</span>Analyze</button>
+  <button data-tab="costs" onclick="go('costs',this)"><span class="ic">🧾</span>Costs</button>
+  <button data-tab="map" onclick="go('map',this)"><span class="ic">🗺️</span>Map</button>
+  <button data-tab="list" onclick="go('list',this)"><span class="ic">❤️</span>List</button>
+  <button data-tab="grants" onclick="go('grants',this)"><span class="ic">💸</span>Grants</button>
+</nav>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* =================================================================
+   BurbScout — app.js (inline)
+   ================================================================= */
+"use strict";
+
+/* ---------- endpoints ---------- */
+const PARCEL_LAYER = "https://gis.franklincountyohio.gov/hosting/rest/services/ParcelFeatures/Parcel_Features/MapServer/0";
+const CRIME_TILES  = "https://tiles.arcgis.com/tiles/3Ft9QGF4nkbgfTUE/arcgis/rest/services/CPD_Density/MapServer/tile/{z}/{y}/{x}";
+const OVERPASS     = "https://overpass-api.de/api/interpreter";
+const NOMINATIM    = "https://nominatim.openstreetmap.org/search";
+const OSRM         = "https://router.project-osrm.org/route/v1/driving/";
+/* Franklin County rough bounds for geocode viewbox (W,N,E,S) */
+const FC_VIEWBOX = "-83.26,40.16,-82.77,39.81";
+
+/* ---------- tiny utils ---------- */
+const $  = id => document.getElementById(id);
+const fmt$ = n => (n==null||isNaN(n)) ? "—" : "$" + Math.round(n).toLocaleString();
+const fmt$c = n => (n==null||isNaN(n)) ? "—" : "$" + n.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num = id => { const v = parseFloat(String($(id).value).replace(/[$,\s]/g,"")); return isNaN(v)?null:v; };
+function toast(msg,ms=3500){ const t=document.createElement("div"); t.className="toast"; t.innerHTML=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),ms); }
+function haversineMi(a,b){ const R=3958.8,dLa=(b.lat-a.lat)*Math.PI/180,dLo=(b.lng-a.lng)*Math.PI/180,
+  la1=a.lat*Math.PI/180,la2=b.lat*Math.PI/180,
+  h=Math.sin(dLa/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h)); }
+
+/* ---------- shared state ---------- */
+let CUR = null;                 // current analyzed home {addr,lat,lng,attrs,price,sqft,taxRate,comps,mismatch,school,taxDist,commutes,counts}
+let PARCEL_FIELDS = null;       // field names from layer metadata
+let sketchPts = [], upPts = []; // last scan results (for proximity counts)
+let map=null, crimeLayer=null, sketchLG=null, upLG=null, pondLG=null, homesLG=null, curMarker=null;
+
+/* ---------- navigation ---------- */
+function go(tab, btn){
+  document.querySelectorAll(".tab").forEach(s=>s.classList.remove("on"));
+  $("tab-"+tab).classList.add("on");
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b===btn));
+  if(tab==="map") initMap();
+  if(tab==="list") initList();
+  window.scrollTo({top:0});
+}
+
+/* =================================================================
+   PARCEL LOOKUP
+   ================================================================= */
+async function layerFields(){
+  if(PARCEL_FIELDS) return PARCEL_FIELDS;
+  try{
+    const r = await fetch(PARCEL_LAYER + "?f=json");
+    const j = await r.json();
+    PARCEL_FIELDS = (j.fields||[]).map(f=>f.name);
+  }catch(e){ PARCEL_FIELDS = []; }
+  return PARCEL_FIELDS;
+}
+function fld(cands){ return cands.find(c => PARCEL_FIELDS.includes(c)) || null; }
+function pick(attrs, cands){ const f = cands.find(c => attrs[c]!=null && attrs[c]!==""); return f!=null ? attrs[f] : null; }
+
+async function geocode(q){
+  const url = NOMINATIM + "?format=json&limit=5&countrycodes=us&bounded=1&viewbox=" + FC_VIEWBOX + "&q=" + encodeURIComponent(q);
+  const r = await fetch(url, {headers:{"Accept":"application/json"}});
+  return r.json();
+}
+
+async function queryParcelAtPoint(lat,lng){
+  const p = new URLSearchParams({
+    f:"json", geometryType:"esriGeometryPoint", inSR:"4326", outSR:"4326",
+    spatialRel:"esriSpatialRelIntersects", outFields:"*", returnGeometry:"true",
+    geometry: JSON.stringify({x:lng,y:lat,spatialReference:{wkid:4326}})
+  });
+  const r = await fetch(PARCEL_LAYER + "/query", {method:"POST", body:p});
+  const j = await r.json();
+  if(j.error) throw new Error(j.error.message||"parcel query failed");
+  return (j.features||[])[0] || null;
+}
+
+async function queryComps(lat,lng, radiusDeg=0.006){
+  const env = { xmin:lng-radiusDeg, ymin:lat-radiusDeg*0.78, xmax:lng+radiusDeg, ymax:lat+radiusDeg*0.78, spatialReference:{wkid:4326} };
+  const p = new URLSearchParams({
+    f:"json", geometryType:"esriGeometryEnvelope", inSR:"4326",
+    spatialRel:"esriSpatialRelIntersects", outFields:"*", returnGeometry:"false",
+    where:"SALEPRICE > 20000", resultRecordCount:"400",
+    geometry: JSON.stringify(env)
+  });
+  const r = await fetch(PARCEL_LAYER + "/query", {method:"POST", body:p});
+  const j = await r.json();
+  if(j.error) return [];
+  return (j.features||[]).map(f=>f.attributes);
+}
+
+const SALE_DATE_CANDS = ["SALEDATE","SALEDT","LASTSALEDATE","TRANSFERDATE","TRANSFER_DATE","DATESOLD","SALE_DATE"];
+const TAX_CANDS = ["TAXES","TAXAMT","ANNUALTAX","NETANNUALTAX","TOTALTAX","TAXBILL"];
+const VALUE_CANDS = ["APPRTOT","TOTALAPPR","MKTTOT","TOTALMKT","APPRAISEDTOTAL","TOTALVALUE","MARKETTOTAL"];
+const YR_CANDS = ["YEARBUILT","YRBUILT","YEARBLT","YRBLT","EFFYRBLT"];
+
+function median(arr){ if(!arr.length) return null; const s=[...arr].sort((a,b)=>a-b); const m=Math.floor(s.length/2);
+  return s.length%2 ? s[m] : (s[m-1]+s[m])/2; }
+
+/* effective tax-rate presets by district keyword — ESTIMATES, editable in Costs */
+const TAX_PRESETS = [
+  ["WORTHINGTON",2.25],["DUBLIN",1.90],["UPPER ARLINGTON",2.30],["BEXLEY",2.55],
+  ["GRANDVIEW",2.35],["HILLIARD",2.15],["WESTERVILLE",2.10],["GAHANNA",2.05],
+  ["NEW ALBANY",2.20],["GROVE CITY",1.85],["REYNOLDSBURG",2.00],["WHITEHALL",1.90],
+  ["CANAL WINCHESTER",1.95],["PICKERINGTON",2.05],["SOUTH-WESTERN",1.80],["SOUTHWESTERN",1.80],
+  ["COLUMBUS",2.00],["HAMILTON",1.85],["MADISON",1.75],["PLAIN",2.10],["CLINTON",1.95]
+];
+function guessTaxRate(school, taxDist){
+  const hay = ((school||"")+" "+(taxDist||"")).toUpperCase();
+  for(const [k,v] of TAX_PRESETS) if(hay.includes(k)) return v;
+  return 2.0;
+}
+
+function firstToken(s){
+  return String(s||"").toUpperCase()
+    .replace(/\b(CITY|LOCAL|EXEMPTED|VILLAGE|SCHOOL|DISTRICT|SD|CSD|LSD|EVSD|TWP|TOWNSHIP|CORP|OF|THE)\b/g," ")
+    .trim().split(/\s+/)[0] || "";
+}
+
+async function analyze(){
+  const q = $("addr-in").value.trim();
+  if(!q){ toast("Type an address first"); return; }
+  const out = $("analyze-out");
+  out.innerHTML = `<div class="card"><span class="spin"></span> Geocoding &amp; pulling county records…</div>`;
+  try{
+    await layerFields();
+    const hits = await geocode(q + (q.match(/ohio|oh\b/i)?"":" Ohio"));
+    if(!hits.length){ out.innerHTML=`<div class="card"><div class="err">Couldn't find that address. Try adding the city and OH — e.g. "123 Main St, Westerville OH".</div></div>`; return; }
+    let hit = hits[0];
+    if(hits.length>1){
+      // show picker
+      out.innerHTML = `<div class="card"><h2>Which one?</h2>` + hits.map((h,i)=>
+        `<button class="btn-ghost" style="width:100%;text-align:left;margin-top:6px;text-transform:none;letter-spacing:0;font-family:var(--body);font-weight:600" onclick="analyzeAt(${h.lat},${h.lon},'${esc(h.display_name).replace(/'/g,"\\'")}')">${esc(h.display_name)}</button>`).join("") + `</div>`;
+      return;
+    }
+    await analyzeAt(parseFloat(hit.lat), parseFloat(hit.lon), hit.display_name);
+  }catch(e){
+    out.innerHTML = `<div class="card"><div class="err">Lookup failed: ${esc(e.message)}. The county GIS server hiccups sometimes — try again in a minute.</div></div>`;
+  }
+}
+
+async function analyzeAt(lat,lng,dispName){
+  const out = $("analyze-out");
+  out.innerHTML = `<div class="card"><span class="spin"></span> Reading the parcel…</div>`;
+  try{
+    await layerFields();
+    const feat = await queryParcelAtPoint(lat,lng);
+    if(!feat){ out.innerHTML=`<div class="card"><div class="err">No Franklin County parcel at that point. If this address is in Delaware / Licking / Fairfield county, it's outside this app's records (school/tax data won't load, but Costs &amp; Map still work).</div></div>`; return; }
+    const a = feat.attributes;
+    const school = pick(a,["SCHLDSCRP","SCHLTXDSCRP"]) || "Unknown";
+    const taxDist = pick(a,["CVTTXDSCRP"]) || "Unknown";
+    const acres = pick(a,["ACRES"]);
+    const owner = pick(a,["OWNERNME1"]);
+    const parcelId = pick(a,["PARCELID"]);
+    const salePrice = pick(a,["SALEPRICE"]);
+    const saleDateRaw = pick(a, SALE_DATE_CANDS);
+    const taxAmt = pick(a, TAX_CANDS);
+    const apprTot = pick(a, VALUE_CANDS);
+    const yrBuilt = pick(a, YR_CANDS);
+    const floors = pick(a,["FLOORCOUNT"]);
+    const flood = pick(a,["FLOOD"]);
+    const ownerOcc = pick(a,["OWNEROCCUPIED"]);
+    const rental = pick(a,["RENTAL"]);
+    const useDesc = pick(a,["PCLASSDSCRP","USECD","PCLASS"]);
+
+    const sTok = firstToken(school), tTok = firstToken(taxDist);
+    const mismatch = sTok && tTok && sTok !== tTok;
+
+    const price = num("list-price");
+    const sqft  = num("list-sqft");
+    const taxRate = guessTaxRate(school, taxDist);
+
+    /* comps */
+    let comps = await queryComps(lat,lng);
+    const dateFld = fld(SALE_DATE_CANDS);
+    let recentNote = "all recorded sales nearby";
+    if(dateFld){
+      const cutoff = Date.now() - 1000*60*60*24*730; // 24 months
+      const recent = comps.filter(c => c[dateFld] && c[dateFld] > cutoff);
+      if(recent.length >= 5){ comps = recent; recentNote = "sales in the last 24 months"; }
+    }
+    const compPrices = comps.map(c=>c.SALEPRICE).filter(v=>v>20000);
+    const medComp = median(compPrices);
+
+    CUR = { addr: dispName, lat, lng, attrs:a, price, sqft, taxRate, school, taxDist, mismatch,
+            medComp, nComps: compPrices.length, taxAmt, salePrice, saleDate: saleDateRaw, yrBuilt, acres };
+
+    /* pre-fill Costs + Add form */
+    if(price) $("c-price").value = price;
+    if(taxAmt && price){ $("c-taxrate").value = (taxAmt/price*100).toFixed(2); $("c-taxsrc").textContent="county actual"; $("c-taxsrc").className="badge b-pine"; }
+    else { $("c-taxrate").value = taxRate.toFixed(2); $("c-taxsrc").textContent="district est."; $("c-taxsrc").className="badge b-amber"; }
+    $("h-addr").value = dispName.split(",").slice(0,3).join(",");
+    if(price) $("h-price").value = price;
+    if(sqft) $("h-sqft").value = sqft;
+    $("h-parcel-note").innerHTML = `Will save with parcel data: <b>${esc(school)}</b> schools / <b>${esc(taxDist)}</b> taxes${mismatch?' <span class="badge b-amber">MIXED</span>':''}`;
+
+    /* proximity counts if scans have run */
+    const here = {lat,lng};
+    const sketchN = sketchPts.filter(p=>haversineMi(here,p)<=1).length;
+    const upN = upPts.filter(p=>haversineMi(here,p)<=1).length;
+
+    /* deal gauge vs comps */
+    let gaugeHtml = "";
+    if(price && medComp){
+      const ratio = price/medComp;
+      const pos = Math.max(3, Math.min(97, 100 - ((ratio-0.7)/0.8)*100 ));
+      const verdict = ratio<=0.9 ? ["Priced under the neighborhood","b-pine"] :
+                      ratio<=1.05 ? ["Right at market","b-grey"] :
+                      ratio<=1.2 ? ["Paying a premium","b-amber"] : ["Well above nearby sales","b-brick"];
+      gaugeHtml = `
+        <h3 style="margin-top:14px">Vs. the neighborhood</h3>
+        <div class="gauge"><i style="left:${pos}%"></i></div>
+        <div class="legend"><span>Overpriced</span><span>Fair</span><span>Deal</span></div>
+        <p class="note">Median of <b class="num">${CUR.nComps}</b> ${recentNote} within ~½ mi: <b class="money">${fmt$(medComp)}</b>.
+        This listing is <b class="num">${(ratio*100-100>=0?"+":"")}${(ratio*100-100).toFixed(0)}%</b> vs that median.
+        <span class="badge ${verdict[1]}">${verdict[0]}</span></p>
+        <p class="note">County sale records include everything from tear-downs to new builds — it's a gut-check, not an appraisal.</p>`;
+    } else if(price){
+      gaugeHtml = `<p class="note">Not enough nearby recorded sales to benchmark this price.</p>`;
+    }
+
+    const commuteHtml = await commuteBlock(lat,lng);
+
+    out.innerHTML = `
+    <div class="card">
+      <h2>${esc(dispName.split(",").slice(0,2).join(","))}</h2>
+      <div class="chips" style="margin-top:6px">
+        ${useDesc?`<span class="badge b-grey">${esc(useDesc)}</span>`:""}
+        ${flood==="Y"?'<span class="badge b-brick">FLOOD ZONE FLAG</span>':""}
+        ${rental==="Y"?'<span class="badge b-amber">REGISTERED RENTAL</span>':""}
+        ${ownerOcc==="Y"?'<span class="badge b-grey">OWNER-OCCUPIED</span>':""}
+      </div>
+
+      <div class="stamp ${mismatch?"":"ok"}">
+        <b>${mismatch ? "⚠ MIXED DISTRICT PARCEL" : "✓ DISTRICTS ALIGN"}</b>
+        SCHOOLS&nbsp;&nbsp;→ ${esc(school)}<br>
+        TAXES&nbsp;&nbsp;&nbsp;&nbsp;→ ${esc(taxDist)}
+        ${mismatch ? "<br>You'd pay one city's taxes for another district's schools — the classic Franklin Co. trap. Verify with the Auditor before assuming either way." : ""}
+      </div>
+
+      <div class="kv">
+        <div class="cell"><i>Parcel</i><b class="num">${esc(parcelId||"—")}</b></div>
+        <div class="cell"><i>Lot</i><b class="num">${acres!=null?acres.toFixed(2)+" ac":"—"}</b></div>
+        <div class="cell"><i>Year built (county)</i><b class="num">${esc(yrBuilt||"—")}</b></div>
+        <div class="cell"><i>Floors (county)</i><b class="num">${esc(floors||"—")}</b></div>
+        <div class="cell"><i>Last sale (county)</i><b class="num">${salePrice?fmt$(salePrice):"—"}</b></div>
+        <div class="cell"><i>County appraised</i><b class="num">${apprTot?fmt$(apprTot):"—"}</b></div>
+        <div class="cell"><i>Owner of record</i><b style="font-size:12px">${esc(owner||"—")}</b></div>
+        <div class="cell"><i>Actual annual tax</i><b class="num">${taxAmt?fmt$(taxAmt):"see Costs est."}</b></div>
+      </div>
+
+      ${gaugeHtml}
+
+      <h3 style="margin-top:14px">Around here</h3>
+      <p class="note">
+        🚩 Sketch signals within 1 mi: <b class="num">${sketchLG?sketchN:"scan the Map tab first"}</b><br>
+        🌈 Up-&amp;-coming signals within 1 mi: <b class="num">${upLG?upN:"scan the Map tab first"}</b><br>
+        Run the scans on the Map tab zoomed to this area, then re-analyze to fold them in.
+      </p>
+
+      ${commuteHtml}
+
+      <div class="row" style="margin-top:12px">
+        <button class="btn-primary" onclick="sendToCosts()">True monthly cost →</button>
+        <button class="btn-ghost" onclick="flyToCur()">See on map</button>
+      </div>
+      <details><summary>Every raw county field</summary>
+        <table class="raw">${Object.entries(a).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table>
+      </details>
+    </div>`;
+  }catch(e){
+    out.innerHTML = `<div class="card"><div class="err">County records lookup failed: ${esc(e.message)}. Their GIS server drops requests sometimes — retry usually works.</div></div>`;
+  }
+}
+
+function sendToCosts(){
+  go("costs", document.querySelector('nav button[data-tab="costs"]'));
+  calcCosts();
+}
+function flyToCur(){
+  if(!CUR) return;
+  go("map", document.querySelector('nav button[data-tab="map"]'));
+  setTimeout(()=>{
+    if(curMarker) curMarker.remove();
+    curMarker = L.marker([CUR.lat,CUR.lng]).addTo(map).bindPopup("<b>"+esc(CUR.addr.split(",")[0])+"</b>").openPopup();
+    map.setView([CUR.lat,CUR.lng], 15);
+  }, 150);
+}
+
+/* =================================================================
+   COMMUTES
+   ================================================================= */
+function getWork(){ try{ return JSON.parse(localStorage.getItem("bs_work")||"{}"); }catch(e){ return {}; } }
+async function setWork(which){
+  const addr = prompt((which==="him"?"His":"Her") + " work address:");
+  if(!addr) return;
+  const hits = await geocode(addr);
+  if(!hits.length){ toast("Couldn't geocode that — add city + OH"); return; }
+  const w = getWork();
+  w[which] = {addr: hits[0].display_name.split(",").slice(0,3).join(","), lat:+hits[0].lat, lng:+hits[0].lon};
+  localStorage.setItem("bs_work", JSON.stringify(w));
+  toast("Saved. Re-run Analyze to see the commute.");
+}
+async function osrmMinutes(from,to){
+  try{
+    const r = await fetch(OSRM + from.lng+","+from.lat+";"+to.lng+","+to.lat+"?overview=false");
+    const j = await r.json();
+    if(j.routes && j.routes[0]) return Math.round(j.routes[0].duration/60);
+  }catch(e){}
+  return null;
+}
+async function commuteBlock(lat,lng){
+  const w = getWork();
+  let rows = "";
+  for(const who of ["him","her"]){
+    if(w[who]){
+      const m = await osrmMinutes({lat,lng}, w[who]);
+      rows += `<div class="li"><span>${who==="him"?"His drive":"Her drive"} · ${esc(w[who].addr.split(",")[0])}</span><span class="num">${m!=null?m+" min":"—"}</span></div>`;
+    } else {
+      rows += `<div class="li"><span>${who==="him"?"His":"Her"} work</span><span><button class="btn-ghost btn-sm" onclick="setWork('${who}')">Set address</button></span></div>`;
+    }
+  }
+  return `<h3 style="margin-top:14px">Commute (typical traffic-free drive)</h3><div class="ledger">${rows}</div>`;
+}
+
+/* =================================================================
+   COSTS — FHA vs Conventional + closing table
+   ================================================================= */
+function pi(loan, ratePct, years=30){
+  const r = ratePct/100/12, n = years*12;
+  if(r===0) return loan/n;
+  return loan * r / (1 - Math.pow(1+r,-n));
+}
+function calcCosts(){
+  const price = num("c-price"); if(!price){ toast("Enter a price"); return; }
+  const rate = num("c-rate") ?? 6.5;
+  const dConvPct = num("c-down-conv") ?? 5, dFhaPct = Math.max(3.5, num("c-down-fha") ?? 3.5);
+  const taxRate = num("c-taxrate") ?? 2.0, insYr = num("c-ins") ?? 1400;
+  const hoa = num("c-hoa") ?? 0, pmiRate = num("c-pmi") ?? 0.55;
+
+  const taxMo = price*taxRate/100/12, insMo = insYr/12;
+
+  /* conventional */
+  const dConv = price*dConvPct/100, loanC = price-dConv;
+  const piC = pi(loanC, rate);
+  const pmiMo = dConvPct>=20 ? 0 : loanC*pmiRate/100/12;
+  const totC = piC+taxMo+insMo+pmiMo+hoa;
+
+  /* FHA: upfront MIP 1.75% financed; annual MIP .55% (>95 LTV) or .50% */
+  const dFha = price*dFhaPct/100, baseF = price-dFha;
+  const ufmip = baseF*0.0175, loanF = baseF+ufmip;
+  const ltv = baseF/price;
+  const mipAnnual = ltv>0.95 ? 0.55 : 0.50;
+  const piF = pi(loanF, rate);
+  const mipMo = loanF*mipAnnual/100/12;
+  const totF = piF+taxMo+insMo+mipMo+hoa;
+
+  /* closing costs (either loan) */
+  const cc = {
+    "Loan origination (~1%)": loanC*0.01,
+    "Appraisal": 550, "Credit / underwriting": 350, "Title insurance & search (~0.5%)": price*0.005,
+    "Recording & county fees": 250, "Home inspection": 425, "Survey (if required)": 300
+  };
+  const prepaids = {
+    "Escrow: 6 mo property tax": taxMo*6,
+    "Escrow: 12 mo insurance": insYr,
+    "Prepaid interest (~15 days)": loanC*rate/100/365*15
+  };
+  const ccSum = Object.values(cc).reduce((a,b)=>a+b,0);
+  const ppSum = Object.values(prepaids).reduce((a,b)=>a+b,0);
+
+  const ledger = (items)=>Object.entries(items).map(([k,v])=>`<div class="li"><span>${k}</span><span>${fmt$(v)}</span></div>`).join("");
+
+  const colHtml = (name, tag, down, loan, piv, miLabel, miv, tot, extra)=>`
+    <div class="card">
+      <h2>${name} <span class="badge ${tag}">${miLabel}</span></h2>
+      <div class="ledger">
+        <div class="li"><span>Down payment</span><span>${fmt$(down)}</span></div>
+        <div class="li"><span>Loan amount</span><span>${fmt$(loan)}</span></div>
+        ${extra||""}
+        <div class="li"><span>Principal &amp; interest</span><span>${fmt$(piv)}</span></div>
+        <div class="li"><span>Property tax (escrow)</span><span>${fmt$(taxMo)}</span></div>
+        <div class="li"><span>Home insurance</span><span>${fmt$(insMo)}</span></div>
+        <div class="li"><span>${miLabel}</span><span>${fmt$(miv)}</span></div>
+        ${hoa?`<div class="li"><span>HOA</span><span>${fmt$(hoa)}</span></div>`:""}
+        <div class="li total"><span>True monthly</span><span>${fmt$(tot)}</span></div>
+      </div>
+    </div>`;
+
+  $("costs-out").innerHTML =
+    colHtml("Conventional","b-pine", dConv, loanC, piC, pmiMo? "PMI":"No PMI (20%+ down)", pmiMo, totC,
+      pmiMo?`<div class="sub">PMI drops off automatically at 78% LTV — roughly ${estPmiYears(loanC,price,rate)} yrs at this pace.</div>`:"")
+  + colHtml("FHA","b-plum", dFha, loanF, piF, "Monthly MIP", mipMo, totF,
+      `<div class="li"><span>Upfront MIP 1.75% (financed)</span><span>${fmt$(ufmip)}</span></div>
+       <div class="sub">FHA MIP sticks for the life of the loan when you put under 10% down — the usual exit is refinancing to conventional later.</div>`)
+  + `<div class="card">
+      <h2>Head to head</h2>
+      <div class="ledger">
+        <div class="li"><span>Conventional monthly</span><span>${fmt$(totC)}</span></div>
+        <div class="li"><span>FHA monthly</span><span>${fmt$(totF)}</span></div>
+        <div class="li total"><span>${totC<totF?"Conventional":"FHA"} wins by</span><span>${fmt$(Math.abs(totC-totF))}/mo</span></div>
+      </div>
+      <p class="note">FHA usually wins on the down payment and looser credit; conventional usually wins long-run because PMI cancels and MIP doesn't. Rates also differ between the two in real quotes — plug in what a lender actually offers you.</p>
+    </div>
+    <div class="card">
+      <h2>The closing table 🧾</h2>
+      <p class="note">This is the part nobody warns you about: the price is not what you need. Cash to close = down payment + closing costs + prepaids.</p>
+      <h3>Closing costs</h3><div class="ledger">${ledger(cc)}
+        <div class="li total"><span>Subtotal</span><span>${fmt$(ccSum)}</span></div></div>
+      <h3 style="margin-top:12px">Prepaids &amp; escrow</h3><div class="ledger">${ledger(prepaids)}
+        <div class="li total"><span>Subtotal</span><span>${fmt$(ppSum)}</span></div></div>
+      <h3 style="margin-top:12px">Cash to close</h3>
+      <div class="ledger">
+        <div class="li"><span>Conventional (${dConvPct}% down)</span><span>${fmt$(dConv+ccSum+ppSum)}</span></div>
+        <div class="li total"><span>FHA (${dFhaPct}% down)</span><span>${fmt$(dFha+ccSum+ppSum)}</span></div>
+      </div>
+      <p class="note">Good news for Ohio: the transfer tax is customarily the <b>seller's</b> bill here. Sellers can also chip in toward your closing costs (up to 6% FHA / 3–9% conventional depending on down payment) — worth negotiating in a slow market.</p>
+      <p class="note">Everything above is a good-faith estimate for planning. Your lender's official Loan Estimate is the real number.</p>
+    </div>`;
+
+  if(CUR) CUR.monthlyEst = Math.min(totC,totF);
+  window.scrollTo({top:0});
+}
+function estPmiYears(loan, price, rate){
+  const target = price*0.78; let bal = loan; const r = rate/100/12; const pay = pi(loan,rate);
+  for(let m=1;m<=360;m++){ bal = bal*(1+r)-pay; if(bal<=target) return Math.ceil(m/12); }
+  return "30";
+}
+
+/* =================================================================
+   MAP + OVERLAYS
+   ================================================================= */
+function initMap(){
+  if(map){ setTimeout(()=>map.invalidateSize(),60); return; }
+  map = L.map("map").setView([39.9832,-82.9988], 11);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    {maxZoom:19, attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+  sketchLG = L.layerGroup(); upLG = L.layerGroup(); pondLG = L.layerGroup(); homesLG = L.layerGroup();
+}
+function toggleCrime(){
+  initMap();
+  const b = $("ly-crime");
+  if(crimeLayer){ map.removeLayer(crimeLayer); crimeLayer=null; b.classList.remove("on"); return; }
+  crimeLayer = L.tileLayer(CRIME_TILES, {opacity:0.55, maxNativeZoom:15, maxZoom:19,
+    attribution:"Columbus Div. of Police"}).addTo(map);
+  b.classList.add("on");
+  toast("Columbus PD incident density. Suburbs (Westerville, Dublin, etc.) have their own PDs — no shading there doesn't mean no crime.");
+}
+async function overpass(q){
+  const r = await fetch(OVERPASS, {method:"POST",
+    headers:{"Content-Type":"application/x-www-form-urlencoded"},
+    body:"data="+encodeURIComponent(q)});
+  if(!r.ok) throw new Error("Overpass "+r.status);
+  return r.json();
+}
+function bboxStr(){
+  const b = map.getBounds();
+  return b.getSouth().toFixed(5)+","+b.getWest().toFixed(5)+","+b.getNorth().toFixed(5)+","+b.getEast().toFixed(5);
+}
+function dot(lat,lng,color,label){
+  return L.circleMarker([lat,lng],{radius:7,color:"#fff",weight:1.5,fillColor:color,fillOpacity:0.92})
+          .bindPopup(label);
+}
+function elPt(el){ return el.type==="node" ? {lat:el.lat,lng:el.lon} : (el.center?{lat:el.center.lat,lng:el.center.lon}:null); }
+
+async function scanSketch(){
+  initMap();
+  if(map.getZoom()<12){ toast("Zoom in to a neighborhood first — this scans what's on screen."); return; }
+  const b = $("ly-sketch"); b.classList.add("on"); b.innerHTML="🚩 Scanning…";
+  const bb = bboxStr();
+  const q = `[out:json][timeout:30];
+  (
+    nwr["shop"="mobile_phone"]["name"~"Boost|Cricket|Metro",i](${bb});
+    nwr["shop"="pawnbroker"](${bb});
+    nwr["shop"="money_lender"](${bb});
+    nwr["amenity"="money_transfer"](${bb});
+    nwr["shop"="variety_store"](${bb});
+    nwr["name"~"Check ?Smart|Check ?Cash|Advance America|CashLand|Title ?Max|ACE Cash|LoanMax|payday",i](${bb});
+    nwr["healthcare:speciality"~"substance_abuse|addiction",i](${bb});
+    nwr["name"~"methadone|suboxone|comprehensive treatment",i]["amenity"!="pharmacy"](${bb});
+    nwr["name"~"plasma",i]["amenity"~"clinic|doctors|blood_donation"](${bb});
+    nwr["amenity"="blood_donation"]["name"~"plasma|CSL|Biolife|Octapharma",i](${bb});
+  );
+  out center 300;`;
+  try{
+    const j = await overpass(q);
+    sketchLG.clearLayers(); sketchPts=[];
+    let n=0;
+    for(const el of j.elements||[]){
+      const p = elPt(el); if(!p) continue;
+      const name = (el.tags&&el.tags.name)||"(unnamed)";
+      const kind = classifySketch(el.tags||{});
+      sketchPts.push({...p, name, kind});
+      dot(p.lat,p.lng,"#B3402E",`<b>${esc(name)}</b><br>${esc(kind)}`).addTo(sketchLG); n++;
+    }
+    sketchLG.addTo(map);
+    b.innerHTML = `🚩 Sketch (${n})`;
+    $("map-out").innerHTML = summarizeScan("Sketch signals in view", n,
+      "Prepaid phone stores, pawn / payday / title loans, plasma centers, dollar stores, and addiction-treatment clinics. One or two nearby means nothing; a cluster tells you about the block. It's a proxy, not a verdict — pair it with the crime layer and a drive-by.");
+  }catch(e){ b.classList.remove("on"); b.innerHTML="🚩 Sketch signals"; toast("Overpass is busy — wait ~30s and retry (free service, rate-limited)."); }
+}
+function classifySketch(t){
+  if(t["healthcare:speciality"] || /methadone|suboxone|comprehensive treatment/i.test(t.name||"")) return "Addiction treatment clinic";
+  if(/plasma|CSL|Biolife|Octapharma/i.test(t.name||"")) return "Plasma center";
+  if(t.shop==="pawnbroker") return "Pawn shop";
+  if(t.shop==="money_lender"||/payday|title ?max|loanmax|advance america|cashland|check ?smart|check ?cash|ace cash/i.test(t.name||"")) return "Payday / title / check cashing";
+  if(t.shop==="variety_store") return "Dollar store";
+  if(t.shop==="mobile_phone") return "Prepaid phone store";
+  if(t.amenity==="money_transfer") return "Money transfer";
+  return "Signal";
+}
+async function scanUp(){
+  initMap();
+  if(map.getZoom()<12){ toast("Zoom in to a neighborhood first — this scans what's on screen."); return; }
+  const b = $("ly-up"); b.classList.add("on"); b.innerHTML="🌈 Scanning…";
+  const bb = bboxStr();
+  const q = `[out:json][timeout:30];
+  (
+    nwr["lgbtq"](${bb});
+    nwr["amenity"="bar"]["lgbtq"](${bb});
+    nwr["craft"="brewery"](${bb});
+    nwr["microbrewery"="yes"](${bb});
+    nwr["shop"="coffee"](${bb});
+    nwr["amenity"="cafe"]["name"~"roast|espresso|coffee co|brew",i](${bb});
+    nwr["leisure"="fitness_centre"]["sport"~"yoga|pilates|climbing",i](${bb});
+    nwr["shop"="records"](${bb});
+    nwr["shop"="art"](${bb});
+    nwr["amenity"="cafe"]["cuisine"~"vegan|vegetarian",i](${bb});
+  );
+  out center 300;`;
+  try{
+    const j = await overpass(q);
+    upLG.clearLayers(); upPts=[];
+    let n=0;
+    for(const el of j.elements||[]){
+      const p = elPt(el); if(!p) continue;
+      const name = (el.tags&&el.tags.name)||"(unnamed)";
+      const kind = classifyUp(el.tags||{});
+      upPts.push({...p, name, kind});
+      dot(p.lat,p.lng,"#7C4D8F",`<b>${esc(name)}</b><br>${esc(kind)}`).addTo(upLG); n++;
+    }
+    upLG.addTo(map);
+    b.innerHTML = `🌈 Up &amp; coming (${n})`;
+    $("map-out").innerHTML = summarizeScan("Gentrification-front signals in view", n,
+      "LGBTQ+ venues, craft breweries, third-wave coffee, yoga/climbing studios, record and art shops. In Columbus these show up 3–7 years before the price curve does — the Short North, Franklinton, and Olde Towne East all followed this script. Cluster + still-cheap listings = the zone you're hunting.");
+  }catch(e){ b.classList.remove("on"); b.innerHTML="🌈 Up &amp; coming"; toast("Overpass is busy — wait ~30s and retry."); }
+}
+function classifyUp(t){
+  if(t.lgbtq) return "LGBTQ+ venue";
+  if(t.craft==="brewery"||t.microbrewery==="yes") return "Craft brewery";
+  if(t.shop==="coffee"||/roast|espresso|coffee co|brew/i.test(t.name||"")) return "Specialty coffee";
+  if(t.leisure==="fitness_centre") return "Yoga / climbing studio";
+  if(t.shop==="records") return "Record shop";
+  if(t.shop==="art") return "Art shop / gallery";
+  if(t.cuisine) return "Vegan / veg café";
+  return "Signal";
+}
+async function scanPonds(){
+  initMap();
+  const center = CUR ? [CUR.lat,CUR.lng] : [map.getCenter().lat, map.getCenter().lng];
+  const b = $("ly-ponds"); b.classList.add("on"); b.innerHTML="🎣 Scanning…";
+  const q = `[out:json][timeout:30];
+  ( nwr["natural"="water"]["water"!~"river|stream|canal|ditch"](around:2400,${center[0]},${center[1]}); );
+  out center 120;`;
+  try{
+    const j = await overpass(q);
+    pondLG.clearLayers();
+    let n=0;
+    for(const el of j.elements||[]){
+      const p = elPt(el); if(!p) continue;
+      const name = (el.tags&&el.tags.name)||"Unnamed water";
+      dot(p.lat,p.lng,"#1F7A5C",`<b>${esc(name)}</b><br>Water within ~1.5 mi`).addTo(pondLG); n++;
+    }
+    pondLG.addTo(map);
+    b.innerHTML = `🎣 Ponds (${n})`;
+    toast(CUR ? n+" water bodies within ~1.5 mi of the analyzed home. Cross-check QuietWater for which ones you can actually fish." 
+              : n+" water bodies near map center.");
+  }catch(e){ b.classList.remove("on"); b.innerHTML="🎣 Ponds"; toast("Overpass is busy — retry in ~30s."); }
+}
+function summarizeScan(title,n,body){
+  return `<div class="card"><h2>${title}: <span class="num">${n}</span></h2><p class="note">${body}</p></div>`;
+}
+
+/* =================================================================
+   SHARED LIST (Supabase)
+   ================================================================= */
+let SB=null, HOMES=[], WHO=localStorage.getItem("bs_who")||"", FILTER="all";
+function setWho(w){ WHO=w; localStorage.setItem("bs_who",w);
+  $("who-him").classList.toggle("on",w==="him"); $("who-her").classList.toggle("on",w==="her"); }
+function initList(){
+  const url=localStorage.getItem("bs_sb_url"), key=localStorage.getItem("bs_sb_key"), hh=localStorage.getItem("bs_house");
+  if(url) $("sb-url").value=url; if(key) $("sb-key").value=key; if(hh) $("sb-house").value=hh;
+  if(WHO) setWho(WHO);
+  if(url&&key&&hh&&!SB) connectSB(true);
+}
+async function connectSB(silent){
+  const url=$("sb-url").value.trim(), key=$("sb-key").value.trim(), hh=$("sb-house").value.trim();
+  if(!url||!key||!hh){ if(!silent) toast("Fill in all three fields"); return; }
+  if(!WHO){ if(!silent) toast("Pick Him or Her — ratings need to know whose thumb this is"); return; }
+  localStorage.setItem("bs_sb_url",url); localStorage.setItem("bs_sb_key",key); localStorage.setItem("bs_house",hh);
+  try{
+    SB = window.supabase.createClient(url,key);
+    await loadHomes();
+    $("sb-setup").style.display="none";
+    $("list-controls").style.display="block";
+    document.querySelectorAll("#list-filters .chip").forEach(c=>c.onclick=()=>{ 
+      document.querySelectorAll("#list-filters .chip").forEach(x=>x.classList.remove("on"));
+      c.classList.add("on"); FILTER=c.dataset.f; renderList(); });
+    /* realtime: her phone updates when you save, and vice versa */
+    SB.channel("homes-live").on("postgres_changes",{event:"*",schema:"public",table:"homes"},()=>loadHomes()).subscribe();
+  }catch(e){ toast("Couldn't connect: "+esc(e.message)); SB=null; }
+}
+async function loadHomes(){
+  const hh=localStorage.getItem("bs_house");
+  const {data,error} = await SB.from("homes").select("*").eq("household",hh).order("created_at",{ascending:false});
+  if(error){ toast("Load failed: "+esc(error.message)); return; }
+  HOMES = data||[]; renderList();
+}
+function descScan(){
+  const d = $("h-desc").value;
+  if(!d) return;
+  const roof = d.match(/(?:new\s+)?roof[^.]{0,40}?((?:19|20)\d{2})/i) || d.match(/((?:19|20)\d{2})[^.]{0,25}roof/i);
+  const hvac = d.match(/(?:hvac|furnace|a\/?c|air condition)[^.]{0,40}?((?:19|20)\d{2})/i) || d.match(/((?:19|20)\d{2})[^.]{0,30}(?:hvac|furnace)/i);
+  if(roof && !$("h-roof").value) $("h-roof").value=roof[1];
+  if(hvac && !$("h-hvac").value) $("h-hvac").value=hvac[1];
+  if(!$("h-cond").value){
+    if(/fully remodel|completely renovat|gut renovat|down to the studs/i.test(d)) $("h-cond").value="Remodeled";
+    else if(/updated|renovated|new kitchen|new bath/i.test(d)) $("h-cond").value="Updated";
+    else if(/as-is|as is|handyman|TLC|investor special|needs work|fixer/i.test(d)) $("h-cond").value="Needs work";
+  }
+  const flags=[];
+  if(/new roof/i.test(d)) flags.push("new roof");
+  if(/new hvac|new furnace|new a\/?c/i.test(d)) flags.push("new HVAC");
+  if(/as-is|as is|handyman|TLC|investor/i.test(d)) flags.push("⚠️ sold-as-is language");
+  if(flags.length) toast("Description scan: "+flags.join(" · "));
+}
+$("h-desc").addEventListener("blur", descScan);
+
+async function saveHome(){
+  if(!SB){ toast("Connect Supabase first"); return; }
+  descScan();
+  const kw = ($("h-desc").value.match(/new roof|new hvac|new furnace|granite|quartz|central air|finished basement|fenced|deck|remodel\w*|updated|as-is|as is|fixer|TLC/gi)||[])
+              .map(s=>s.toLowerCase()).filter((v,i,a)=>a.indexOf(v)===i).join(", ");
+  const row = {
+    household: localStorage.getItem("bs_house"),
+    address: $("h-addr").value.trim(), listing_url: $("h-url").value.trim(),
+    price: num("h-price"), sqft: num("h-sqft"), beds: num("h-beds"), baths: num("h-baths"),
+    garage: $("h-garage").value, home_type: $("h-type").value, stories: $("h-stories").value,
+    status: $("h-status").value, sale_type: $("h-sale-type").value,
+    listed_date: $("h-listed").value||null,
+    roof_year: num("h-roof"), hvac_year: num("h-hvac"), condition: $("h-cond").value,
+    keywords: kw,
+    lat: CUR&&CUR.addr&&$("h-addr").value&&CUR.addr.includes($("h-addr").value.split(",")[0]) ? CUR.lat : null,
+    lng: CUR&&CUR.addr&&$("h-addr").value&&CUR.addr.includes($("h-addr").value.split(",")[0]) ? CUR.lng : null,
+    school_district: CUR?CUR.school:null, tax_district: CUR?CUR.taxDist:null,
+    district_mismatch: CUR?CUR.mismatch:null,
+    monthly_est: CUR&&CUR.monthlyEst?Math.round(CUR.monthlyEst):null,
+    deal_score: CUR&&CUR.price&&CUR.medComp ? Math.max(0,Math.min(100,Math.round(100-((CUR.price/CUR.medComp)-0.7)/0.8*100))) : null,
+    is_new: $("h-sale-type").value==="New build"
+  };
+  if(!row.address){ toast("Address is required"); return; }
+  const {error} = await SB.from("homes").insert(row);
+  if(error){ toast("Save failed: "+esc(error.message)); return; }
+  toast("Saved to our list ❤️");
+  ["h-url","h-addr","h-price","h-sqft","h-beds","h-baths","h-desc","h-roof","h-hvac","h-listed"].forEach(id=>$(id).value="");
+}
+async function rateHome(id, val){
+  const col = WHO==="her" ? "her_rating" : "his_rating";
+  await SB.from("homes").update({[col]:val}).eq("id",id);
+  loadHomes();
+}
+async function delHome(id){
+  if(!confirm("Remove this home from the list?")) return;
+  await SB.from("homes").delete().eq("id",id);
+  loadHomes();
+}
+function daysOn(h){ return h.listed_date ? Math.max(0,Math.round((Date.now()-new Date(h.listed_date))/864e5)) : null; }
+function renderList(){
+  let rows = [...HOMES];
+  if(FILTER==="active") rows = rows.filter(h=>h.status==="Active");
+  if(FILTER==="both-liked") rows = rows.filter(h=>(h.his_rating||0)>=4 && (h.her_rating||0)>=4);
+  if(FILTER==="mismatch") rows = rows.filter(h=>h.district_mismatch);
+  const s = $("list-sort").value;
+  rows.sort((a,b)=>{
+    if(s==="created_at") return new Date(b.created_at)-new Date(a.created_at);
+    if(s==="price") return (a.price||9e9)-(b.price||9e9);
+    if(s==="monthly_est") return (a.monthly_est||9e9)-(b.monthly_est||9e9);
+    if(s==="deal_score") return (b.deal_score||-1)-(a.deal_score||-1);
+    if(s==="days") return (daysOn(b)||-1)-(daysOn(a)||-1);
+    if(s==="roof_year"||s==="hvac_year") return (b[s]||0)-(a[s]||0);
+    return 0;
+  });
+  const stars=(v,id,who)=>{ let h=`<span class="rate" title="${who}">`;
+    for(let i=1;i<=5;i++) h+=`<button onclick="rateHome('${id}',${i})" ${WHO!==who?'style="pointer-events:none"':''}>${i<=(v||0)?"★":"☆"}</button>`;
+    return h+"</span>"; };
+  $("list-out").innerHTML = rows.length ? rows.map(h=>{
+    const d = daysOn(h);
+    const sc = h.deal_score;
+    const scCls = sc==null?"b-grey":sc>=70?"b-pine":sc>=45?"b-amber":"b-brick";
+    return `<div class="home-item">
+      <div class="top">
+        <div>
+          <div class="addr">${esc(h.address)}</div>
+          <div class="price">${fmt$(h.price)} ${h.monthly_est?`<span class="badge b-pine">${fmt$(h.monthly_est)}/mo true</span>`:""}</div>
+          <div class="meta">${[h.beds&&h.beds+" bd",h.baths&&h.baths+" ba",h.sqft&&h.sqft.toLocaleString()+" sf",h.home_type,h.stories,h.garage].filter(Boolean).join(" · ")}</div>
+          <div class="meta">${[h.status!=="Active"&&h.status,h.sale_type!=="Standard"&&h.sale_type,d!=null&&d+" days listed",h.roof_year&&"roof '"+String(h.roof_year).slice(2),h.hvac_year&&"HVAC '"+String(h.hvac_year).slice(2),h.condition].filter(Boolean).join(" · ")}</div>
+          ${h.school_district?`<div class="meta">🎓 ${esc(h.school_district)} ${h.district_mismatch?'<span class="badge b-amber">MIXED DIST.</span>':""}</div>`:""}
+          ${h.keywords?`<div class="meta">🔑 ${esc(h.keywords)}</div>`:""}
+        </div>
+        <div style="text-align:right">
+          ${sc!=null?`<div class="score-ring ${scCls}">${sc}</div>`:""}
+        </div>
+      </div>
+      <div class="ratings">
+        <span class="badge b-pine">Him</span>${stars(h.his_rating,h.id,"him")}
+        <span class="badge b-plum">Her</span>${stars(h.her_rating,h.id,"her")}
+      </div>
+      <div class="row" style="margin-top:10px">
+        ${h.listing_url?`<a href="${esc(h.listing_url)}" target="_blank" rel="noopener" style="flex:1"><button class="btn-primary btn-sm" style="width:100%">Open listing ↗</button></a>`:""}
+        <button class="btn-ghost btn-sm" onclick="delHome('${h.id}')">Remove</button>
+      </div>
+    </div>`;
+  }).join("") : `<div class="card"><p class="note">Nothing saved yet. Analyze a home, run its costs, then add it here — it'll show up on her phone the second you save it.</p></div>`;
+}
+function plotSaved(){
+  initMap();
+  homesLG.clearLayers();
+  let n=0;
+  for(const h of HOMES){
+    if(h.lat&&h.lng){ 
+      L.marker([h.lat,h.lng]).bindPopup(`<b>${esc(h.address)}</b><br>${fmt$(h.price)}${h.listing_url?`<br><a href="${esc(h.listing_url)}" target="_blank">Open listing</a>`:""}`).addTo(homesLG); n++;
+    }
+  }
+  homesLG.addTo(map);
+  $("ly-homes").classList.add("on");
+  toast(n ? n+" saved homes pinned (only ones added via Analyze carry coordinates)." : "No saved homes with map coordinates yet — analyze before saving to pin them.");
+}
+
+/* =================================================================
+   GRANTS
+   ================================================================= */
+function checkGrants(){
+  const his = num("g-his")||0, hers = num("g-hers")||0, both = his+hers;
+  const price = num("g-price")||0, limit = num("g-limit")||0;
+  const line = (label,inc)=>{
+    const ok = limit ? inc<=limit : null;
+    return `<div class="li"><span>${label}</span><span class="num">${fmt$(inc)}/yr ${ok==null?"":ok?'<span class="badge b-pine">UNDER LIMIT</span>':'<span class="badge b-brick">OVER</span>'}</span></div>`;
+  };
+  $("grants-out").innerHTML = `
+  <div class="card">
+    <h2>Income vs OHFA limit</h2>
+    <div class="ledger">
+      ${line("Him alone", his)}
+      ${line("Her alone", hers)}
+      ${line("Applying together", both)}
+    </div>
+    <p class="note">OHFA counts the income of everyone <b>on the loan</b>. If one of you qualifies alone and can carry the mortgage solo, applying single is a legit strategy — the other can still be on the deed. Talk it through with an OHFA-approved lender; there are occupancy and title rules to respect.</p>
+  </div>
+  <div class="grant"><h3>OHFA YourChoice! Down Payment Assistance</h3>
+    <p class="note">2.5% or 5% of the purchase price toward down payment + closing costs. On ${fmt$(price)} that's <b class="money">${fmt$(price*0.025)}</b> or <b class="money">${fmt$(price*0.05)}</b>. Forgiven after 7 years in the home. Must use an OHFA loan; income &amp; price limits apply.</p>
+    <a href="https://www.ohiohome.org/homebuyers/downpayment.aspx" target="_blank" rel="noopener">ohiohome.org → down payment</a></div>
+  <div class="grant"><h3>OHFA Grants for Grads</h3>
+    <p class="note">Same 2.5–5% assistance with a discounted rate if either of you finished a degree (associate's and up) in the last 48 months. Forgiven after 5 years if you stay in Ohio.</p>
+    <a href="https://www.ohiohome.org/homebuyers/gradgrants.aspx" target="_blank" rel="noopener">ohiohome.org → grants for grads</a></div>
+  <div class="grant"><h3>OHFA Ohio Heroes</h3>
+    <p class="note">Rate discount for public-sector and service workers — teachers, healthcare, first responders, military, and <b>government employees</b>. A county annexation job may well count. Stack with YourChoice DPA.</p>
+    <a href="https://www.ohiohome.org/homebuyers/ohioheroes.aspx" target="_blank" rel="noopener">ohiohome.org → ohio heroes</a></div>
+  <div class="grant"><h3>Communities First (Port of Greater Cincinnati / statewide)</h3>
+    <p class="note">Grant of 3–5% that does <b>not</b> require repayment, usable with FHA or conventional, often friendlier limits than OHFA. Worth quoting side-by-side.</p>
+    <a href="https://www.cincinnatiport.org/communities-first-ohio/" target="_blank" rel="noopener">communities first ohio</a></div>
+  <div class="grant"><h3>Franklin County / Columbus city programs</h3>
+    <p class="note">The county land bank and the City of Columbus run rotating down-payment and rehab programs (e.g., American Dream DPA). These change with funding cycles — check both sites when you're 60 days out.</p>
+    <a href="https://www.columbus.gov/Services/Neighborhoods/Housing" target="_blank" rel="noopener">columbus.gov housing</a></div>
+  <p class="note">⚠️ Program terms, rates, and limits above are descriptive and move every year. Confirm current numbers with an OHFA-approved lender before building them into your budget.</p>`;
+}
+
+/* boot */
+initList();
+</script>
+</body>
+</html>
