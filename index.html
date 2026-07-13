@@ -222,6 +222,17 @@ table.raw td:first-child{color:var(--ink2);width:44%}
     <div id="afford-out"></div>
   </div>
 
+  <div class="card">
+    <h2>Should we even buy? 🏠 vs 🔑</h2>
+    <p class="note">The honest question nobody selling you a house will ask. Buying only beats renting once you've owned long enough to out-earn the closing costs — sell too early and you lose money even if the house appreciates.</p>
+    <div class="row">
+      <div><label for="rb-rent">Rent now ($/mo)</label><input id="rb-rent" inputmode="numeric" placeholder="1650"></div>
+      <div><label for="rb-appr">Appreciation %/yr</label><input id="rb-appr" inputmode="decimal" value="3.5"></div>
+    </div>
+    <button class="btn-primary" style="margin-top:8px" onclick="calcRentBuy()">Find the break-even</button>
+    <div id="rb-out"></div>
+  </div>
+
   <div id="costs-out"></div>
 
   <div class="card">
@@ -427,6 +438,34 @@ table.raw td:first-child{color:var(--ink2);width:44%}
     <h2>6. Rating houses together</h2>
     <p class="note">Every home has two rows of stars — his and hers. You can only tap your own. On the List tab, filter by <b>Both ❤️</b> to see the houses you <i>both</i> gave 4+ stars. Those are the ones to go see.</p>
     <p class="note">Sort by <b>Best fit for us</b> and the top of the list is your shortlist. The <b>Side by side</b> table compares them all at once.</p>
+  </div>
+
+  <div class="card">
+    <h2>The whole process, start to finish</h2>
+    <p class="note">Nobody lays this out for first-time buyers. Here it is.</p>
+    <div class="step"><div class="n">1</div><div class="t">Get pre-approved (before looking seriously)<small>Not "pre-qualified" — pre-<b>approved</b>. It's free, takes a day, and tells you the real number. Talk to 2–3 lenders on the same day; rates and fees genuinely differ, and a soft window means the credit pulls count as one.</small></div></div>
+    <div class="step"><div class="n">2</div><div class="t">Set the ceiling, then look<small>Use the affordability calculator on the Money tab. Never tour a house above it — you'll fall in love and rationalize.</small></div></div>
+    <div class="step"><div class="n">3</div><div class="t">Tour, and use the showing checklist<small>Every saved home has one. Come back at night before you offer.</small></div></div>
+    <div class="step"><div class="n">4</div><div class="t">Make an offer<small>Includes earnest money (1–2%, credited to you at closing) and contingencies. <b>Keep the inspection, financing, and appraisal contingencies.</b> Waiving them is how first-time buyers get destroyed.</small></div></div>
+    <div class="step"><div class="n">5</div><div class="t">Inspection (~7–10 days)<small>$400–500, plus a $150–250 sewer scope and a radon test — both essential in Columbus. Whatever it finds is a renegotiation, not automatically a dealbreaker.</small></div></div>
+    <div class="step"><div class="n">6</div><div class="t">Appraisal<small>The bank checks the house is worth what you're paying. If it appraises low, you renegotiate, pay the gap in cash, or walk.</small></div></div>
+    <div class="step"><div class="n">7</div><div class="t">Underwriting (~30 days)<small>Do not change jobs, open a credit card, or buy a car. People lose loans doing this at the finish line.</small></div></div>
+    <div class="step"><div class="n">8</div><div class="t">Closing<small>You bring cash to close (down payment + closing costs). Final walkthrough the same day — make sure nothing broke and the seller took their junk.</small></div></div>
+    <p class="note">Start to finish is typically 30–45 days from accepted offer.</p>
+  </div>
+
+  <div class="card">
+    <h2>Words people will use at you 📖</h2>
+    <details><summary>Escrow</summary><p class="note">Two meanings. (1) A neutral third party holding money during the sale. (2) The account your lender uses to collect property tax and insurance monthly, then pay them for you. That's why your payment is bigger than the mortgage alone.</p></details>
+    <details><summary>PMI / MIP</summary><p class="note">Mortgage insurance. Protects the <b>lender</b>, not you. You pay it when you put less than 20% down. On a conventional loan it cancels automatically once you've got 22% equity. On FHA with low down payment it lasts the life of the loan — you escape it by refinancing.</p></details>
+    <details><summary>Earnest money</summary><p class="note">A deposit (1–2%) proving you're serious. It's credited toward your down payment at closing. You get it back if you walk for a protected reason. You lose it if you just change your mind.</p></details>
+    <details><summary>Contingency</summary><p class="note">An escape hatch written into your offer. "Inspection contingency" = I can walk if the inspection is bad, and keep my earnest money. Sellers prefer offers without them. Do not be the person who waives them.</p></details>
+    <details><summary>Appraisal gap</summary><p class="note">When the bank's appraiser values the house below your offer. The bank only lends against the appraised value, so you must cover the difference in cash, renegotiate, or walk.</p></details>
+    <details><summary>Closing costs</summary><p class="note">Fees to finalize the loan and transfer the house — origination, title, appraisal, recording. Roughly 2–4% of the price, on top of your down payment. Sellers can be asked to cover some.</p></details>
+    <details><summary>Points</summary><p class="note">Prepaid interest. One point = 1% of the loan, buying a slightly lower rate. Worth it only if you'll stay long enough to break even — ask the lender for that number.</p></details>
+    <details><summary>Under contract / pending / contingent</summary><p class="note">Someone's offer was accepted. "Contingent" means it could still fall through. Not worth chasing unless you want to be the backup.</p></details>
+    <details><summary>Millage / effective tax rate</summary><p class="note">How Ohio calculates property tax. What matters to you is the effective rate — the app derives it from what neighbors actually pay.</p></details>
+    <details><summary>Triennial reappraisal</summary><p class="note">Ohio counties re-value homes on a cycle. If you paid far above the county's current value, your tax bill will rise toward what you paid. The app flags this on every home — it's the most common nasty surprise for new owners.</p></details>
   </div>
 
   <div class="card">
@@ -933,6 +972,8 @@ async function analyzeAt(lat,lng,disp){
        Age is a bill you haven't been handed yet. */
     const nowY = new Date().getFullYear();
     const age = yrBuilt ? nowY - (+yrBuilt) : null;
+    const listedRaw = $("h-listed").value;
+    const daysListed = listedRaw ? Math.max(0, Math.round((Date.now()-new Date(listedRaw))/864e5)) : null;
     const roofY = num("h-roof"), hvacY = num("h-hvac");
     const upcoming = [];
     if(age!=null){
@@ -993,7 +1034,12 @@ async function analyzeAt(lat,lng,disp){
       amenity_n: ctx?(ctx.grocery*3 + ctx.food + ctx.parks*2):null,
       water_n: ctx?ctx.water:null, commute_him:cHim, commute_her:cHer, ctx,
       appraised: apprTot||null, yrBuilt: yrBuilt?+yrBuilt:null, flood: flood==="Y",
-      reassess, maintTotal: maintTotal||null, topComps
+      reassess, maintTotal: maintTotal||null, topComps,
+      /* fitParts() reads the same snake_case names a saved DB row uses. Without these
+         aliases the live score silently drops the two heaviest components — budget and
+         schools — and a home would rescore the moment you saved it. */
+      monthly_est: CUR.monthlyEst || null,
+      school_district: school
     });
     const fit = fitScore(CUR);
     CUR.fit = fit;
@@ -1106,6 +1152,30 @@ async function analyzeAt(lat,lng,disp){
       <p class="note">Built ${esc(yrBuilt||"?")}${age?` — ${age} years old`:""}. These are rough national replacement costs, not quotes, and a good inspection beats any estimate. But a house that's ${fmt$(maintTotal)} cheaper isn't cheaper if it needs ${fmt$(maintTotal)} of work. Paste the listing description on the List tab and the app will pull the roof and HVAC years out of it automatically.</p>`:""}
 
       ${stability}
+
+      ${(()=>{const hz=eraHazards(yrBuilt); if(!hz.length) return "";
+        return `<h3 style="margin-top:14px">Ask about these ${yrBuilt?`<span class="badge b-grey">built ${esc(yrBuilt)}</span>`:""}</h3>
+        <p class="note">Era-specific problems that don't appear on any listing. You don't need to fear them — you need to <b>ask</b>, because each one is either a negotiating chip or a reason to walk.</p>
+        ${hz.map(x=>`<details style="border-left:3px solid var(--${x.sev==="high"?"brick":"amber"})">
+          <summary style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:13.5px">
+            ${esc(x.t)} <span class="badge ${SEV[x.sev][0]}">${SEV[x.sev][1]}</span></summary>
+          <p class="note">${esc(x.w)}</p>
+          <p class="note"><b>What to do:</b> ${esc(x.do)}</p>
+        </details>`).join("")}`;})()}
+
+      ${(()=>{const oa=offerAdvice(price, medComp, daysListed, apprTot); if(!oa) return "";
+        return `<h3 style="margin-top:14px">What to offer</h3>
+        <div class="ledger">
+          <div class="li"><span>Position</span><span><span class="badge ${oa.posture[1]}">${oa.posture[0]}</span></span></div>
+          <div class="li total"><span>Sensible range</span><span>${fmt$(oa.low)} – ${fmt$(oa.high)}</span></div>
+          <div class="li"><span>Earnest money (typical)</span><span>${fmt$(oa.earnest[0])} – ${fmt$(oa.earnest[1])}</span></div>
+        </div>
+        <p class="note">${esc(oa.why)}</p>
+        ${oa.gapRisk?`<div class="warn"><b>Appraisal gap risk.</b> You'd be paying far above the county's appraised value. If the bank's appraiser agrees with the county rather than the seller, the loan comes up short and <b>you have to cover the difference in cash</b> — or walk and possibly lose your earnest money. Keep the appraisal contingency.</div>`:""}
+        <p class="note">Earnest money is a good-faith deposit that goes toward your down payment at closing. You get it back if you walk for a reason your contract protects (inspection, financing, appraisal) — which is exactly why those contingencies matter.</p>`;})()}
+
+      ${school!=="Unknown"?`<p class="note">🎓 Check the state's report card for <b>${esc(school)}</b>:
+        <a href="https://reportcard.education.ohio.gov/search?searchTerm=${encodeURIComponent(school)}" target="_blank" rel="noopener">Ohio School Report Cards ↗</a></p>`:""}
 
       ${fit!=null?`
       <h3 style="margin-top:14px">Fit for us</h3>
@@ -1234,6 +1304,76 @@ function renderSetup(){
       </div>`).join("")}
   </div>`;
 }
+
+/* ================= OFFER STRATEGY =================
+   Two first-time buyers staring at a listing have no idea what to actually offer.
+   Days-on-market is the leverage signal nobody explains: a house sitting 60 days has
+   a motivated seller; one listed Thursday will have five offers by Sunday. */
+function offerAdvice(price, medComp, dom, apprTot){
+  if(!price) return null;
+  const ratio = medComp ? price/medComp : null;
+  let posture, lo, hi, why;
+
+  if(dom!=null && dom >= 60){
+    posture = ["Strong buyer position","b-pine"];
+    lo = 0.92; hi = 0.97;
+    why = `${dom} days on market. In a healthy Columbus neighborhood, anything past ~45 days means the price is wrong or something's scaring buyers off. Find out which — then negotiate. Ask for closing-cost credits too; sellers this deep in often prefer that to dropping the number.`;
+  } else if(dom!=null && dom >= 30){
+    posture = ["Some leverage","b-pine"];
+    lo = 0.95; hi = 1.00;
+    why = `${dom} days listed — past the first rush. You can offer at or slightly under asking with normal contingencies and expect to be taken seriously.`;
+  } else if(dom!=null && dom <= 7){
+    posture = ["Likely competitive","b-brick"];
+    lo = 1.00; hi = 1.05;
+    why = `Only ${dom} days on market. Expect other offers. Winning here usually means offering at or above list with a strong earnest deposit — but do NOT waive the inspection. Waiving inspection is how first-time buyers inherit a $15,000 sewer line.`;
+  } else {
+    posture = ["Normal market","b-grey"];
+    lo = 0.97; hi = 1.02;
+    why = dom!=null ? `${dom} days on market — an ordinary position.` : `Add the listing date on the List tab and this gets much sharper — days-on-market is the single biggest clue to how hard you can push.`;
+  }
+  if(ratio && ratio > 1.15){
+    why += ` Also: this is priced ~${Math.round((ratio-1)*100)}% above nearby recorded sales. Even in a competitive spot, that's the seller's optimism, not the market's verdict.`;
+  }
+  const gapRisk = apprTot && price/apprTot > 1.30;
+  return {
+    posture, low: price*lo, high: price*hi, why,
+    earnest: [price*0.01, price*0.02],
+    gapRisk
+  };
+}
+
+/* ================= ERA HAZARDS =================
+   A house's build year predicts its expensive surprises with uncomfortable accuracy.
+   None of this is on a listing, and a first-time buyer has no reason to know to ask.
+   Franklin County specifics are baked in — it's EPA Radon Zone 1, and Columbus has a
+   large stock of pre-1950 homes still on lead service lines. */
+function eraHazards(yr){
+  const h = [];
+  if(!yr) return h;
+  const y = +yr;
+  h.push({t:"Radon", sev:"high", w:"Franklin County is EPA Radon Zone 1 — the highest tier, meaning the predicted average indoor level is above the EPA action threshold. This has nothing to do with the house's age or condition; it's the geology under the whole county.",
+    do:"A test is $15–30 (DIY kit) or ~$150 (pro). If it's high, mitigation runs $800–1,500 — ask the seller to cover it. Never skip this in Columbus."});
+  if(y < 1978) h.push({t:"Lead paint", sev:"high", w:`Built ${y}, before the 1978 ban. Federal law requires the seller to disclose known lead paint and give you a 10-day window to test.`,
+    do:"Matters most if you'll have kids or plan to sand/renovate. Intact paint is usually fine; peeling paint on window sills and trim is the risk. Inspection add-on ~$300."});
+  if(y < 1950) h.push({t:"Lead water service line", sev:"high", w:`Pre-1950 Columbus homes frequently still have a lead service line running from the main to the house.`,
+    do:"Columbus has a replacement program — look the address up on the city's lead service line map before you offer. Private-side replacement can cost thousands if you're on the hook."});
+  if(y >= 1950 && y <= 1990) h.push({t:"Electrical panel (Federal Pacific / Zinsco)", sev:"med", w:"Panels from this era include brands that fail to trip under load. Some insurers refuse to write a policy until they're replaced.",
+    do:"Have the inspector photograph the panel label. Replacement is $2,000–4,000. This is a legitimate thing to negotiate."});
+  if(y >= 1965 && y <= 1973) h.push({t:"Aluminum branch wiring", sev:"high", w:"Homes wired in this window often used aluminum branch circuits, which is a known fire risk at connections.",
+    do:"Ask specifically. Remediation (COPALUM/AlumiConn connectors) is $2,000–6,000, and some insurers will decline coverage without it."});
+  if(y >= 1978 && y <= 1995) h.push({t:"Polybutylene plumbing", sev:"med", w:"Grey plastic supply pipe used in this era fails without warning and floods the house. Many insurers won't cover it.",
+    do:"Look under sinks for grey pipe with crimped fittings. Repipe is $4,000–10,000."});
+  if(y < 1980) h.push({t:"Asbestos", sev:"med", w:"Common pre-1980 in floor tile, pipe insulation, duct wrap, and popcorn ceilings.",
+    do:"Undisturbed, it's generally safe and legal to leave. It only becomes a real cost if you plan to renovate — abatement is $2,000+."});
+  if(y < 1960) h.push({t:"Galvanized supply pipes", sev:"med", w:"They corrode from the inside out — the symptom is bad water pressure and rusty water.",
+    do:"Run every faucet during the showing. Repipe is $4,000–8,000."});
+  if(y < 1970) h.push({t:"Clay / cast-iron sewer lateral", sev:"med", w:"Old laterals crack and fill with tree roots. The line from the house to the street is YOUR responsibility, not the city's.",
+    do:"Get a sewer scope — $150–250, and the single best-value inspection add-on for an older Columbus home. A lateral replacement is $5,000–15,000 and involves digging up the yard."});
+  if(y < 1950) h.push({t:"Knob-and-tube wiring", sev:"high", w:"Pre-1950 homes may still have active knob-and-tube. It has no ground, and insurers frequently refuse to cover it.",
+    do:"Ask the inspector to check the attic and basement joists. Rewiring is $8,000–15,000."});
+  return h;
+}
+const SEV = {high:["b-brick","Ask before offering"], med:["b-amber","Worth checking"]};
 
 /* ================= CONTEXT SCAN =================
    One Overpass call per home. Answers "what's around here" so neither of you has
@@ -1486,6 +1626,66 @@ function calcAfford(){
     <p class="note">Assumes ${rate}% interest, ${tr}% effective tax rate, ${fmt$(ins)}/yr insurance${hoa?`, ${fmt$(hoa)}/mo HOA`:""}. Change any of those above and re-run. A lender's pre-approval is the real answer — this tells you where to look.</p>`;
 }
 
+/* Rent vs buy, year by year.
+   Buying isn't automatically winning — closing costs on both ends plus maintenance
+   mean you can own for three years, watch the house appreciate, and still come out
+   behind. This finds the year that flips. */
+function calcRentBuy(){
+  const price = num("c-price"); if(!price){ toast("Set a purchase price above first"); return; }
+  const rent0 = num("rb-rent"); if(!rent0){ toast("What's your rent now?"); return; }
+  const appr  = (num("rb-appr") ?? 3.5)/100;
+  const rate  = num("c-rate") ?? 6.5;
+  const tr    = num("c-taxrate") ?? 2.0;
+  const ins   = num("c-ins") ?? 1400;
+  const hoa   = num("c-hoa") ?? 0;
+  const dcPct = num("c-down-conv") ?? 5;
+  const pmiR  = num("c-pmi") ?? 0.55;
+
+  const down = price*dcPct/100;
+  let loan = price - down;
+  const r = rate/100/12, pmt = pi(loan, rate);
+  const closingIn = price*0.015 + 2400;                 /* what you pay to get in */
+  const rentGrowth = 0.03;                              /* rent doesn't stay still either */
+
+  let buyOut = down + closingIn;   /* cash spent owning */
+  let rentOut = 0;                 /* cash spent renting */
+  let bal = loan, rows = [], flip = null;
+
+  for(let y=1; y<=10; y++){
+    for(let m=0;m<12;m++){
+      const pmiMo = (dcPct<20 && bal > price*0.78) ? bal*pmiR/100/12 : 0;
+      const interest = bal*r;
+      bal = bal - (pmt - interest);
+      buyOut += pmt + price*tr/100/12 + ins/12 + hoa + pmiMo;
+    }
+    buyOut += price*0.01;                                /* maintenance, ~1%/yr — the cost renters never pay */
+    rentOut += rent0*12*Math.pow(1+rentGrowth, y-1);
+
+    const value = price*Math.pow(1+appr, y);
+    const sellCost = value*0.07;                         /* agent + closing on the way out */
+    const equity = value - sellCost - Math.max(bal,0);
+    const buyNet = buyOut - equity;                      /* true cost of having owned */
+    rows.push({y, buyNet, rentOut, value, equity});
+    if(!flip && buyNet < rentOut) flip = y;
+  }
+
+  $("rb-out").innerHTML = `
+    <div class="ledger" style="margin-top:12px;font-size:12.5px">
+      <div class="li"><span><b>Year</b></span><span><b>Owning cost you</b> · <b>Renting cost you</b></span></div>
+      ${rows.filter(x=>x.y<=7).map(x=>`<div class="li">
+        <span>${x.y}</span>
+        <span>${fmt$(x.buyNet)} · ${fmt$(x.rentOut)} ${x.buyNet<x.rentOut?'<span class="badge b-pine">BUY AHEAD</span>':'<span class="badge b-brick">RENT AHEAD</span>'}</span>
+      </div>`).join("")}
+    </div>
+    ${flip ? `<div class="ok" style="margin-top:10px"><b>Buying pulls ahead in year ${flip}.</b>
+        If there's a real chance you'd move before then — job, family, second thoughts about the neighborhood —
+        renting is the financially safer call. Past year ${flip}, owning wins and keeps winning.</div>`
+      : `<div class="warn" style="margin-top:10px">At ${fmt$(price)} against ${fmt$(rent0)}/mo rent,
+        buying doesn't pull ahead within 10 years. That usually means the price is too high relative to what
+        renting the same thing costs. Either look cheaper, or wait — this isn't a moral failing, it's arithmetic.</div>`}
+    <p class="note">Counts what people forget: ~1%/yr maintenance, PMI until it cancels, 3% annual rent increases, and the ~7% it costs to <i>sell</i>. Assumes ${(appr*100).toFixed(1)}% appreciation — the honest answer is nobody knows, so try 0% and see if the case still holds.</p>`;
+}
+
 /* ================= MAP — auto-populating layers ================= */
 const BASE_LABEL={crime:"🔥 Crime heat",sketch:"🚩 Sketch signals",up:"🌈 Up &amp; coming",ponds:"🎣 Ponds",homes:"🏠 Our list"};
 function initMap(){
@@ -1607,7 +1807,7 @@ async function layerCrime(){
   for(const s of srcs){
     try{
       const feats = await esriQuery(s.url,{geometry:env,geometryType:"esriGeometryEnvelope",inSR:"4326",outSR:"4326",
-        spatialRel:"esriSpatialRelIntersects",outFields:"",returnGeometry:"true",resultRecordCount:"3000"});
+        spatialRel:"esriSpatialRelIntersects",outFields:"OBJECTID",returnGeometry:"true",resultRecordCount:"3000"});
       const p = feats.map(f=>f.geometry).filter(g=>g&&g.y!=null&&g.x!=null).map(g=>[g.y,g.x,0.6]);
       pts=pts.concat(p);
       live.push(s.label+" ("+p.length+")");
@@ -2021,12 +2221,77 @@ function renderList(){
         <button class="btn-ghost btn-sm" style="width:100%;margin-top:6px" onclick="saveNote('${h.id}')">Save note</button>
         <p class="note">After the eighth house they all blur together. Write it down while you're standing in the driveway.</p>
       </details>
+      <details style="margin-top:8px">
+        <summary>Showing checklist ${checkDone(h)?`<span class="badge b-pine">${checkDone(h)}/${SHOWING.length}</span>`:""}</summary>
+        <p class="note">Tap these while you're <b>in</b> the house. You will not remember later, and half of these are things sellers hope you don't check.</p>
+        ${SHOWING.map((c,i)=>`<div class="step ${isChecked(h,i)?"done":""} tappable" onclick="toggleCheck('${h.id}',${i})">
+            <div class="n">${isChecked(h,i)?"✓":""}</div>
+            <div class="t">${c.t}<small>${c.s}</small></div>
+          </div>`).join("")}
+      </details>
       <div class="row" style="margin-top:10px">
         ${h.listing_url?`<a href="${esc(h.listing_url)}" target="_blank" rel="noopener" style="flex:1"><button class="btn-primary btn-sm" style="width:100%">Open listing ↗</button></a>`:""}
+        <button class="btn-ghost btn-sm" onclick="shareHome('${h.id}')">Share ↗</button>
         <button class="btn-ghost btn-sm" onclick="delHome('${h.id}')">Remove</button>
       </div>
     </div>`;
-  }).join("") : `<div class="card"><p class="note">Nothing saved yet. Paste a listing link on the Analyze tab — it does the rest.</p></div>`;
+  }).join("") : `<div class="card"><p class="note">Nothing saved yet. Paste a listing link on the Find tab — it does the rest.</p></div>`;
+}
+
+/* ---- showing checklist: the things you only get one chance to look at ---- */
+const SHOWING = [
+  {t:"Run every faucet at once", s:"Weak pressure = old galvanized pipes or a bad main"},
+  {t:"Check under every sink", s:"Water stains, warped wood, grey plastic pipe (polybutylene)"},
+  {t:"Look at the electrical panel", s:"Photograph the brand label. Federal Pacific / Zinsco = insurance problem"},
+  {t:"Basement walls & floor", s:"Horizontal cracks, white powder, fresh paint on one wall = hiding something"},
+  {t:"Smell for damp or musty air", s:"Especially in the basement. Sellers run dehumidifiers before showings"},
+  {t:"Ceilings in every room", s:"Brown rings = a roof or plumbing leak, past or present"},
+  {t:"Open and close every window", s:"Painted shut, broken seals, fogged double panes"},
+  {t:"Look at the furnace & water heater labels", s:"Manufacture date is on the sticker — this is the real age"},
+  {t:"Flush every toilet", s:"Slow drain can mean the sewer lateral is failing"},
+  {t:"Walk the yard boundary", s:"Grading sloping TOWARD the house is how basements flood"},
+  {t:"Check the roof from the street", s:"Curling shingles, sagging ridge, patchwork sections"},
+  {t:"Look at the neighbors' houses", s:"You're buying the street, not just the house"},
+  {t:"Come back at night", s:"Noise, lighting, who's around, what the parking is like. Non-negotiable"},
+  {t:"Check cell signal in every room", s:"Sounds trivial until you live there"}
+];
+const parseChecks = h => { try{ return JSON.parse(h.checklist||"[]"); }catch(e){ return []; } };
+const isChecked = (h,i) => parseChecks(h).includes(i);
+const checkDone = h => parseChecks(h).length;
+async function toggleCheck(id, i){
+  const h = HOMES.find(x=>x.id===id); if(!h) return;
+  const c = parseChecks(h);
+  const at = c.indexOf(i);
+  if(at>=0) c.splice(at,1); else c.push(i);
+  h.checklist = JSON.stringify(c);          /* optimistic — the UI shouldn't lag your thumb */
+  renderList();
+  const {error} = await SB.from("homes").update({checklist:h.checklist}).eq("id",id);
+  if(error) toast("Couldn't save that tick: "+esc(error.message));
+}
+
+/* ---- share a home summary: everything your agent or lender needs, in one paste ---- */
+function shareHome(id){
+  const h = HOMES.find(x=>x.id===id); if(!h) return;
+  const L = [];
+  L.push(h.address);
+  if(h.price) L.push(`List: ${fmt$(h.price)}`);
+  if(h.monthly_est) L.push(`True monthly (est): ${fmt$(h.monthly_est)}`);
+  if(h.reassess_bump) L.push(`⚠️ Likely +${fmt$(h.reassess_bump)}/mo after tax reassessment`);
+  if(h.school_district) L.push(`Schools: ${h.school_district}${h.district_mismatch?" (MIXED — taxes are a different district)":""}`);
+  if(h.tax_district) L.push(`Tax district: ${h.tax_district}`);
+  if(h.year_built) L.push(`Built: ${h.year_built}`);
+  if(h.maint_5yr) L.push(`Est. repairs coming due: ~${fmt$(h.maint_5yr)}`);
+  if(h.own_pct!=null) L.push(`Owner-occupied nearby: ${h.own_pct}%`);
+  if(h.flood) L.push(`FLOOD ZONE — flood insurance required`);
+  const f = fitScore(h); if(f!=null) L.push(`Our fit score: ${f}/100`);
+  if(h.his_note) L.push(`Travis: ${h.his_note}`);
+  if(h.her_note) L.push(`Kaylin: ${h.her_note}`);
+  if(h.listing_url) L.push(h.listing_url);
+  const text = L.join("\n");
+  if(navigator.share){ navigator.share({title:h.address, text}).catch(()=>{}); return; }
+  navigator.clipboard.writeText(text).then(
+    ()=>toast("Summary copied — paste it to your agent or lender."),
+    ()=>prompt("Copy this:", text));
 }
 async function saveNote(id){
   const v = $("note-"+id).value.trim();
