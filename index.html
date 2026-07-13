@@ -8,15 +8,14 @@
 <meta name="theme-color" content="#22303C">
 <title>BurbScout — Franklin County home truth</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75,500..800&family=Public+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
 :root{
   --paper:#F7F6F2; --card:#FFFFFF; --ink:#22303C; --ink2:#5B6B78;
-  --pine:#1F7A5C; --pine-soft:#E4F1EB;      /* money / his */
-  --plum:#7C4D8F; --plum-soft:#F1E9F5;      /* schools / hers */
-  --amber:#C97F10; --amber-soft:#FBF1DE;    /* warnings / mismatch */
-  --brick:#B3402E; --brick-soft:#F9E8E4;    /* crime / negative */
+  --pine:#1F7A5C; --pine-soft:#E4F1EB;
+  --plum:#7C4D8F; --plum-soft:#F1E9F5;
+  --amber:#C97F10; --amber-soft:#FBF1DE;
+  --brick:#B3402E; --brick-soft:#F9E8E4;
   --line:#E3E1DA; --rad:14px;
   --disp:'Archivo',system-ui,sans-serif; --body:'Public Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
 }
@@ -27,7 +26,7 @@ body{font-family:var(--body);background:var(--paper);color:var(--ink);font-size:
 h1,h2,h3{font-family:var(--disp);font-stretch:75%;letter-spacing:.02em;line-height:1.1}
 h1{font-size:22px;font-weight:800;text-transform:uppercase}
 h2{font-size:17px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
-h3{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2)}
+h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2)}
 .money,.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 header{position:sticky;top:0;z-index:900;background:var(--ink);color:#fff;
   padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:baseline;gap:10px}
@@ -48,30 +47,26 @@ button{font-family:var(--disp);font-stretch:75%;font-weight:700;text-transform:u
   border:none;border-radius:10px;padding:12px 14px;font-size:14px;cursor:pointer}
 .btn-primary{background:var(--pine);color:#fff;width:100%}
 .btn-ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
-.btn-plum{background:var(--plum);color:#fff}
 .btn-sm{padding:7px 10px;font-size:12px}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
 .chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--ink2)}
 .chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.chip.busy{background:var(--amber-soft);border-color:var(--amber);color:var(--amber)}
+.chip.fail{background:var(--brick-soft);border-color:var(--brick);color:var(--brick)}
 .badge{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;border-radius:6px;padding:2px 7px;letter-spacing:.03em}
 .b-pine{background:var(--pine-soft);color:var(--pine)} .b-plum{background:var(--plum-soft);color:var(--plum)}
 .b-amber{background:var(--amber-soft);color:var(--amber)} .b-brick{background:var(--brick-soft);color:var(--brick)}
 .b-grey{background:#EEF0F2;color:var(--ink2)}
-
-/* signature: the surveyor's stamp for district mismatch */
 .stamp{border:2.5px solid var(--amber);color:var(--amber);border-radius:8px;padding:10px 12px;margin:10px 0;
   font-family:var(--mono);font-size:12.5px;font-weight:600;transform:rotate(-1.2deg);background:var(--amber-soft)}
 .stamp b{display:block;font-size:14px;letter-spacing:.12em;margin-bottom:3px}
 .stamp.ok{border-color:var(--pine);color:var(--pine);background:var(--pine-soft);transform:rotate(-.6deg)}
-
-/* signature: the true-monthly ledger */
 .ledger{font-family:var(--mono);font-size:14px}
-.ledger .li{display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed var(--line)}
+.ledger .li{display:flex;justify-content:space-between;gap:10px;padding:7px 2px;border-bottom:1px dashed var(--line)}
 .ledger .li span:first-child{color:var(--ink2)}
 .ledger .li.total{border-top:2.5px solid var(--ink);border-bottom:3px double var(--ink);font-weight:600;font-size:17px;padding:10px 2px}
 .ledger .li.total span:first-child{color:var(--ink)}
 .ledger .sub{font-size:11px;color:var(--ink2);padding:2px 2px 8px}
-
 .kv{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .kv .cell{background:var(--paper);border-radius:10px;padding:8px 10px}
 .kv .cell b{display:block;font-family:var(--mono);font-size:15px}
@@ -79,23 +74,19 @@ button{font-family:var(--disp);font-stretch:75%;font-weight:700;text-transform:u
 .note{font-size:12px;color:var(--ink2);margin-top:6px}
 .warn{font-size:12.5px;background:var(--amber-soft);color:#7c5107;border-radius:10px;padding:9px 11px;margin:8px 0}
 .err{font-size:12.5px;background:var(--brick-soft);color:var(--brick);border-radius:10px;padding:9px 11px;margin:8px 0}
-
-nav{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:var(--ink);display:flex;
-  padding-bottom:env(safe-area-inset-bottom)}
+.ok{font-size:12.5px;background:var(--pine-soft);color:var(--pine);border-radius:10px;padding:9px 11px;margin:8px 0}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:var(--ink);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 nav button{flex:1;background:none;color:#8FA1AF;border-radius:0;padding:10px 2px 8px;font-size:10.5px;letter-spacing:.06em;display:flex;flex-direction:column;align-items:center;gap:3px}
 nav button .ic{font-size:19px;line-height:1}
 nav button.on{color:#fff}
-nav button.on .ic{transform:translateY(-1px)}
-
-#map{height:62vh;min-height:380px;border-radius:var(--rad);border:1px solid var(--line)}
-.map-tools{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 6px}
+#map{height:58vh;min-height:340px;border-radius:var(--rad);border:1px solid var(--line)}
+.map-tools{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
 .leaflet-container{font-family:var(--body)}
 details{border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-top:10px;background:#fff}
 summary{font-weight:700;font-size:13px;cursor:pointer;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em}
 table.raw{width:100%;font-size:11.5px;font-family:var(--mono);margin-top:8px;border-collapse:collapse}
 table.raw td{padding:3px 4px;border-bottom:1px solid var(--line);word-break:break-word}
 table.raw td:first-child{color:var(--ink2);width:44%}
-
 .home-item{border:1px solid var(--line);border-radius:var(--rad);background:#fff;padding:12px;margin-bottom:10px}
 .home-item .top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
 .home-item .price{font-family:var(--mono);font-weight:600;font-size:17px}
@@ -105,30 +96,28 @@ table.raw td:first-child{color:var(--ink2);width:44%}
 .rate{display:flex;gap:2px}
 .rate button{background:none;padding:2px;font-size:18px;line-height:1}
 .score-ring{font-family:var(--mono);font-weight:600;border-radius:10px;padding:6px 10px;font-size:15px;text-align:center;min-width:64px}
-.slider-row{display:flex;align-items:center;gap:10px;margin:6px 0}
-.slider-row label{margin:0;flex:1}
-.slider-row input[type=range]{flex:2;padding:0}
-.slider-row output{font-family:var(--mono);font-size:12px;width:34px;text-align:right}
 .gauge{height:10px;border-radius:6px;background:linear-gradient(90deg,var(--brick),var(--amber),var(--pine));position:relative;margin:10px 0 4px}
 .gauge i{position:absolute;top:-4px;width:4px;height:18px;background:var(--ink);border-radius:2px}
+.bar{height:9px;border-radius:5px;background:#EEF0F2;overflow:hidden;margin:4px 0}
+.bar i{display:block;height:100%;border-radius:5px}
 .legend{font-size:11px;color:var(--ink2);display:flex;justify-content:space-between}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--pine);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px}
 @keyframes sp{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom));z-index:2000;
   background:var(--ink);color:#fff;border-radius:12px;padding:10px 16px;font-size:13px;max-width:88vw;box-shadow:0 6px 24px rgba(0,0,0,.25)}
-.grant{border-left:4px solid var(--pine);padding:10px 12px;background:#fff;border-radius:0 12px 12px 0;border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:10px}
+.grant{border-left:4px solid var(--pine);padding:10px 12px;background:#fff;border-radius:0 12px 12px 0;
+  border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:10px}
 .grant h3{color:var(--ink)}
 .grant a{color:var(--pine);font-weight:700}
-.pick-list{position:absolute;z-index:1200;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.18);max-width:92vw}
-.pick-list button{display:block;width:100%;text-align:left;background:none;color:var(--ink);font-family:var(--body);text-transform:none;letter-spacing:0;font-weight:500;font-size:14px;padding:11px 14px;border-bottom:1px solid var(--line);border-radius:0}
+.diag .li{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;padding:6px 2px;border-bottom:1px dashed var(--line)}
 </style>
 </head>
 <body>
 
 <header>
   <h1>BurbScout</h1>
-  <span class="sub">Franklin Co. house truth · his &amp; hers</span>
+  <span class="sub">All of Franklin County · his &amp; hers</span>
 </header>
 
 <main>
@@ -137,12 +126,9 @@ table.raw td:first-child{color:var(--ink2);width:44%}
 <section id="tab-analyze" class="tab on">
   <div class="card">
     <h2>Analyze a home</h2>
-    <p class="note">Paste the address from any Zillow / Realtor / MLS listing. BurbScout pulls the county's own records — the stuff the listing doesn't show.</p>
+    <p class="note">Paste the address from any listing — Zillow, Realtor, MLS, a yard sign. Works for every parcel in the county: Columbus, Dublin, Westerville, Grove City, Whitehall, the townships, all of it.</p>
     <label for="addr-in">Address</label>
-    <div class="row" style="position:relative">
-      <input id="addr-in" placeholder="123 Main St, Columbus OH" autocomplete="street-address">
-      <div id="addr-picks" class="pick-list" style="display:none"></div>
-    </div>
+    <input id="addr-in" placeholder="123 Main St, Westerville OH" autocomplete="street-address">
     <div class="row" style="margin-top:8px">
       <div><label for="list-price">List price ($)</label><input id="list-price" inputmode="numeric" placeholder="400000"></div>
       <div><label for="list-sqft">Sq ft (from listing)</label><input id="list-sqft" inputmode="numeric" placeholder="1800"></div>
@@ -150,13 +136,26 @@ table.raw td:first-child{color:var(--ink2);width:44%}
     <button class="btn-primary" style="margin-top:12px" onclick="analyze()">Pull county records</button>
   </div>
   <div id="analyze-out"></div>
+
+  <div class="card">
+    <h2>District &amp; jurisdiction reference</h2>
+    <p class="note">Every city, village, township, and CDP in Franklin County, plus the tax district codes. Split codes — where you pay one place's taxes and attend another's schools — are flagged in amber. Search a code, a suburb, or a school district.</p>
+    <input id="ref-q" placeholder="Try: 054, Hilliard, Dublin CSD, Prairie…" oninput="renderRef()">
+    <div class="chips" id="ref-tabs">
+      <button class="chip on" data-r="splits">⚠️ Split districts</button>
+      <button class="chip" data-r="codes">All codes</button>
+      <button class="chip" data-r="places">Cities &amp; villages</button>
+      <button class="chip" data-r="twps">Townships &amp; CDPs</button>
+    </div>
+    <div id="ref-out"></div>
+  </div>
 </section>
 
 <!-- ============ COSTS ============ -->
 <section id="tab-costs" class="tab">
   <div class="card">
     <h2>What it really costs</h2>
-    <p class="note">The sticker price is the smallest surprise. This is everything, monthly and at the closing table — FHA and conventional side by side.</p>
+    <p class="note">The sticker price is the smallest surprise. Everything below, monthly and at the closing table — FHA and conventional side by side.</p>
     <div class="row">
       <div><label for="c-price">Purchase price</label><input id="c-price" inputmode="numeric" value="400000"></div>
       <div><label for="c-rate">Interest rate %</label><input id="c-rate" inputmode="decimal" value="6.5"></div>
@@ -166,14 +165,14 @@ table.raw td:first-child{color:var(--ink2);width:44%}
       <div><label for="c-down-fha">FHA down %</label><input id="c-down-fha" inputmode="decimal" value="3.5"></div>
     </div>
     <div class="row">
-      <div><label for="c-taxrate">Property tax %/yr <span id="c-taxsrc" class="badge b-grey">est.</span></label><input id="c-taxrate" inputmode="decimal" value="2.0"></div>
+      <div><label for="c-taxrate">Property tax %/yr <span id="c-taxsrc" class="badge b-grey">default</span></label><input id="c-taxrate" inputmode="decimal" value="2.0"></div>
       <div><label for="c-ins">Insurance $/yr</label><input id="c-ins" inputmode="numeric" value="1400"></div>
     </div>
     <div class="row">
       <div><label for="c-hoa">HOA $/mo</label><input id="c-hoa" inputmode="numeric" value="0"></div>
       <div><label for="c-pmi">PMI rate %/yr (conv.)</label><input id="c-pmi" inputmode="decimal" value="0.55"></div>
     </div>
-    <p class="note">Ohio taxes bill off the county's assessed value, not your purchase price — the % here is an <b>effective</b> rate. When you analyze a home, BurbScout fills this from the parcel's actual district when it can. Always verify on the Auditor's site before you write an offer.</p>
+    <p class="note">When you run Analyze, BurbScout derives this tax rate from what neighboring parcels <b>actually pay</b> — no guessing, and it works in every township and suburb. Still verify on the Auditor's site before you write an offer.</p>
     <button class="btn-primary" style="margin-top:8px" onclick="calcCosts()">Run the numbers</button>
   </div>
   <div id="costs-out"></div>
@@ -182,25 +181,31 @@ table.raw td:first-child{color:var(--ink2);width:44%}
 <!-- ============ MAP ============ -->
 <section id="tab-map" class="tab">
   <div class="map-tools">
-    <button class="chip" id="ly-crime" onclick="toggleCrime()">🔥 Crime heat</button>
-    <button class="chip" id="ly-sketch" onclick="scanSketch()">🚩 Sketch signals</button>
-    <button class="chip" id="ly-up" onclick="scanUp()">🌈 Up &amp; coming</button>
-    <button class="chip" id="ly-ponds" onclick="scanPonds()">🎣 Ponds</button>
-    <button class="chip" id="ly-homes" onclick="plotSaved()">🏠 Our list</button>
+    <button class="chip" id="ly-crime" onclick="toggleLayer('crime')">🔥 Crime heat</button>
+    <button class="chip" id="ly-sketch" onclick="toggleLayer('sketch')">🚩 Sketch signals</button>
+    <button class="chip" id="ly-up" onclick="toggleLayer('up')">🌈 Up &amp; coming</button>
+    <button class="chip" id="ly-ponds" onclick="toggleLayer('ponds')">🎣 Ponds</button>
+    <button class="chip" id="ly-homes" onclick="toggleLayer('homes')">🏠 Our list</button>
   </div>
   <div id="map"></div>
-  <p class="note">Crime heat = Columbus PD incident density (city jurisdiction only — suburbs run their own departments, so blank ≠ safe there). Signal scans cover the map view you're looking at; zoom to an area first, then tap a scan.</p>
+  <p class="note" id="map-status">Turn a layer on — it fills in automatically and refreshes whenever you pan or zoom. Zoom in past neighborhood level for the POI scans (they'd time out county-wide).</p>
   <div id="map-out"></div>
+  <div class="card">
+    <h2>Data check</h2>
+    <p class="note">If a layer won't load, run this — it tells you which service is down rather than leaving you guessing.</p>
+    <button class="btn-ghost" style="width:100%" onclick="runDiag()">Test all data sources</button>
+    <div id="diag-out" class="diag"></div>
+  </div>
 </section>
 
 <!-- ============ LIST ============ -->
 <section id="tab-list" class="tab">
   <div class="card" id="sb-setup">
     <h2>Our shared list</h2>
-    <p class="note">One list, two phones. Uses your Supabase project (same drill as Par-Lay). Enter it once per phone.</p>
+    <p class="note">One list, two phones. Uses your Supabase project. Enter it once per phone.</p>
     <label for="sb-url">Supabase URL</label><input id="sb-url" placeholder="https://xxxx.supabase.co">
     <label for="sb-key">Anon key</label><input id="sb-key" placeholder="eyJ...">
-    <label for="sb-house">Household code (same on both phones)</label><input id="sb-house" placeholder="e.g. tandg-2026-fishing">
+    <label for="sb-house">Household code (same on both phones)</label><input id="sb-house" placeholder="e.g. tandg-2026">
     <label>Who is this phone?</label>
     <div class="chips">
       <button class="chip" id="who-him" onclick="setWho('him')">Him</button>
@@ -211,8 +216,8 @@ table.raw td:first-child{color:var(--ink2);width:44%}
   <div id="list-controls" style="display:none">
     <div class="card">
       <h2>Add a home</h2>
-      <label for="h-url">Listing URL (Zillow / Realtor / anywhere)</label><input id="h-url" placeholder="https://www.zillow.com/homedetails/...">
-      <label for="h-addr">Address</label><input id="h-addr" placeholder="Auto-fills from Analyze tab">
+      <label for="h-url">Listing URL</label><input id="h-url" placeholder="https://www.zillow.com/homedetails/...">
+      <label for="h-addr">Address</label><input id="h-addr" placeholder="Auto-fills from Analyze">
       <div class="row">
         <div><label for="h-price">Price</label><input id="h-price" inputmode="numeric"></div>
         <div><label for="h-sqft">Sq ft</label><input id="h-sqft" inputmode="numeric"></div>
@@ -231,7 +236,7 @@ table.raw td:first-child{color:var(--ink2);width:44%}
         <div><label for="h-sale-type">Sale type</label><select id="h-sale-type"><option>Standard</option><option>New build</option><option>Foreclosure</option><option>Auction</option><option>Short sale</option></select></div>
         <div><label for="h-listed">Listed date</label><input id="h-listed" type="date"></div>
       </div>
-      <label for="h-desc">Paste the listing description (optional — auto-detects roof / HVAC / remodel)</label>
+      <label for="h-desc">Listing description (auto-detects roof / HVAC / remodel)</label>
       <textarea id="h-desc" placeholder="Paste the agent's blurb here…"></textarea>
       <div class="row">
         <div><label for="h-roof">Roof year</label><input id="h-roof" inputmode="numeric" placeholder="?"></div>
@@ -276,7 +281,7 @@ table.raw td:first-child{color:var(--ink2);width:44%}
       <div><label for="g-price">Target price</label><input id="g-price" inputmode="numeric" value="400000"></div>
       <div><label for="g-limit">OHFA income limit (Franklin Co.)</label><input id="g-limit" inputmode="numeric" value="129000"></div>
     </div>
-    <p class="note">⚠️ The limit box is editable on purpose — OHFA updates income &amp; price limits every year. Pull today's numbers from <a href="https://www.ohiohome.org/homebuyers/incomelimits.aspx" target="_blank" rel="noopener">ohiohome.org</a> before counting on anything.</p>
+    <p class="note">⚠️ The limit box is editable on purpose — OHFA updates income and price limits every year. Pull today's numbers from <a href="https://www.ohiohome.org/homebuyers/incomelimits.aspx" target="_blank" rel="noopener">ohiohome.org</a> before counting on anything.</p>
     <button class="btn-primary" onclick="checkGrants()">Check programs</button>
   </div>
   <div id="grants-out"></div>
@@ -295,41 +300,41 @@ table.raw td:first-child{color:var(--ink2);width:44%}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-/* =================================================================
-   BurbScout — app.js (inline)
-   ================================================================= */
 "use strict";
 
-/* ---------- endpoints ---------- */
-const PARCEL_LAYER = "https://gis.franklincountyohio.gov/hosting/rest/services/ParcelFeatures/Parcel_Features/MapServer/0";
-const CRIME_TILES  = "https://tiles.arcgis.com/tiles/3Ft9QGF4nkbgfTUE/arcgis/rest/services/CPD_Density/MapServer/tile/{z}/{y}/{x}";
-const OVERPASS     = "https://overpass-api.de/api/interpreter";
-const NOMINATIM    = "https://nominatim.openstreetmap.org/search";
-const OSRM         = "https://router.project-osrm.org/route/v1/driving/";
-/* Franklin County rough bounds for geocode viewbox (W,N,E,S) */
+/* ================= endpoints ================= */
+const PARCEL   = "https://gis.franklincountyohio.gov/hosting/rest/services/ParcelFeatures/Parcel_Features/MapServer/0";
+const MUNI     = "https://gis.franklincountyohio.gov/hosting/rest/services/BaseMap/Administrative_Area/MapServer/3";
+const CRIME    = "https://tiles.arcgis.com/tiles/3Ft9QGF4nkbgfTUE/arcgis/rest/services/CPD_Density/MapServer/tile/{z}/{y}/{x}";
+const OVERPASS = ["https://overpass-api.de/api/interpreter",
+                  "https://overpass.kumi.systems/api/interpreter",
+                  "https://overpass.private.coffee/api/interpreter"];
+const NOMINATIM= "https://nominatim.openstreetmap.org/search";
+const OSRM     = "https://router.project-osrm.org/route/v1/driving/";
 const FC_VIEWBOX = "-83.26,40.16,-82.77,39.81";
+const AUDITOR_PARCEL = "https://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=profileall&UseSearch=no&pin=";
 
-/* ---------- tiny utils ---------- */
-const $  = id => document.getElementById(id);
+/* ================= utils ================= */
+const $ = id => document.getElementById(id);
 const fmt$ = n => (n==null||isNaN(n)) ? "—" : "$" + Math.round(n).toLocaleString();
-const fmt$c = n => (n==null||isNaN(n)) ? "—" : "$" + n.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const num = id => { const v = parseFloat(String($(id).value).replace(/[$,\s]/g,"")); return isNaN(v)?null:v; };
-function toast(msg,ms=3500){ const t=document.createElement("div"); t.className="toast"; t.innerHTML=msg;
+const num = id => { const v=parseFloat(String($(id).value).replace(/[$,\s]/g,"")); return isNaN(v)?null:v; };
+const median = a => { if(!a.length) return null; const s=[...a].sort((x,y)=>x-y), m=s.length>>1;
+  return s.length%2 ? s[m] : (s[m-1]+s[m])/2; };
+function toast(msg,ms=4000){ const t=document.createElement("div"); t.className="toast"; t.innerHTML=msg;
   document.body.appendChild(t); setTimeout(()=>t.remove(),ms); }
-function haversineMi(a,b){ const R=3958.8,dLa=(b.lat-a.lat)*Math.PI/180,dLo=(b.lng-a.lng)*Math.PI/180,
-  la1=a.lat*Math.PI/180,la2=b.lat*Math.PI/180,
-  h=Math.sin(dLa/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLo/2)**2;
+function miles(a,b){ const R=3958.8,dLa=(b.lat-a.lat)*Math.PI/180,dLo=(b.lng-a.lng)*Math.PI/180,
+  l1=a.lat*Math.PI/180,l2=b.lat*Math.PI/180,
+  h=Math.sin(dLa/2)**2+Math.cos(l1)*Math.cos(l2)*Math.sin(dLo/2)**2;
   return 2*R*Math.asin(Math.sqrt(h)); }
+const pct = (n,d) => d ? Math.round(n/d*100) : null;
 
-/* ---------- shared state ---------- */
-let CUR = null;                 // current analyzed home {addr,lat,lng,attrs,price,sqft,taxRate,comps,mismatch,school,taxDist,commutes,counts}
-let PARCEL_FIELDS = null;       // field names from layer metadata
-let sketchPts = [], upPts = []; // last scan results (for proximity counts)
-let map=null, crimeLayer=null, sketchLG=null, upLG=null, pondLG=null, homesLG=null, curMarker=null;
+/* ================= state ================= */
+let CUR=null, FIELDS=[], map=null, curMarker=null;
+let LAYERS={};
+let moveTimer=null;
 
-/* ---------- navigation ---------- */
-function go(tab, btn){
+function go(tab,btn){
   document.querySelectorAll(".tab").forEach(s=>s.classList.remove("on"));
   $("tab-"+tab).classList.add("on");
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b===btn));
@@ -338,674 +343,797 @@ function go(tab, btn){
   window.scrollTo({top:0});
 }
 
-/* =================================================================
-   PARCEL LOOKUP
-   ================================================================= */
-async function layerFields(){
-  if(PARCEL_FIELDS) return PARCEL_FIELDS;
-  try{
-    const r = await fetch(PARCEL_LAYER + "?f=json");
-    const j = await r.json();
-    PARCEL_FIELDS = (j.fields||[]).map(f=>f.name);
-  }catch(e){ PARCEL_FIELDS = []; }
-  return PARCEL_FIELDS;
+/* ================= county services ================= */
+async function loadFields(){
+  if(FIELDS.length) return FIELDS;
+  const r = await fetch(PARCEL+"?f=json");
+  const j = await r.json();
+  FIELDS = (j.fields||[]).map(f=>f.name);
+  return FIELDS;
 }
-function fld(cands){ return cands.find(c => PARCEL_FIELDS.includes(c)) || null; }
-function pick(attrs, cands){ const f = cands.find(c => attrs[c]!=null && attrs[c]!==""); return f!=null ? attrs[f] : null; }
+const has = n => FIELDS.includes(n);
+function pick(a,cands){ const k=cands.find(c=>a[c]!=null && a[c]!==""); return k?a[k]:null; }
+function fieldOf(cands){ return cands.find(c=>has(c))||null; }
 
+/* ================= Franklin County jurisdiction roster =================
+   Every incorporated place, civil township, and CDP in the county.
+   Used to name the jurisdiction, and to sanity-check what the GIS returns. */
+const JURIS = {
+  cities: ["Bexley","Canal Winchester","Columbus","Dublin","Gahanna","Grandview Heights","Grove City",
+           "Groveport","Hilliard","New Albany","Obetz","Reynoldsburg","Upper Arlington","Westerville",
+           "Whitehall","Worthington"],
+  villages: ["Brice","Harrisburg","Lockbourne","Marble Cliff","Minerva Park","Riverlea","Urbancrest","Valleyview"],
+  townships: ["Blendon","Brown","Clinton","Franklin","Hamilton","Jackson","Jefferson","Madison","Marion",
+              "Mifflin","Norwich","Perry","Plain","Pleasant","Prairie","Sharon","Truro","Washington"],
+  cdps: ["Blacklick Estates","Darbydale","Huber Ridge","Lake Darby","Lincoln Village"]
+};
+
+/* Tax district codes: [code] -> municipality/township + school district.
+   Reference table — annexations create new codes over time, so when this
+   disagrees with what the county GIS returns for a parcel, the county wins. */
+const TAX_DISTRICTS = {
+  "010":["Columbus City","Columbus CSD"],
+  "020":["Bexley City","Bexley CSD"],
+  "025":["Gahanna City (Mifflin Twp)","Gahanna Jefferson CSD"],
+  "027":["Gahanna City (Jefferson Twp)","Gahanna Jefferson CSD"],
+  "030":["Grandview Heights City","Grandview Heights CSD"],
+  "040":["Grove City (Jackson Twp)","South-Western CSD"],
+  "042":["Grove City (Pleasant Twp)","South-Western CSD"],
+  "050":["Hilliard City (Norwich Twp)","Hilliard CSD"],
+  "053":["Hilliard City (Brown Twp)","Hilliard CSD"],
+  "054":["Hilliard City (Norwich Twp)","Dublin CSD"],
+  "060":["Reynoldsburg City (Truro Twp)","Reynoldsburg CSD"],
+  "061":["Reynoldsburg City (Truro Twp)","Licking Heights LSD"],
+  "062":["Reynoldsburg City (Jefferson Twp)","Gahanna Jefferson CSD"],
+  "067":["Reynoldsburg City (Jefferson Twp)","Licking Heights LSD"],
+  "068":["Reynoldsburg City (Jefferson Twp)","Reynoldsburg CSD"],
+  "070":["Upper Arlington City","Upper Arlington CSD"],
+  "075":["Upper Arlington City","Dublin CSD"],
+  "076":["Upper Arlington City (Perry Twp)","Dublin CSD"],
+  "080":["Westerville City","Westerville CSD"],
+  "090":["Whitehall City","Whitehall CSD"],
+  "100":["Worthington City (Sharon Twp)","Worthington CSD"],
+  "101":["Worthington City (Perry Twp)","Worthington CSD"],
+  "110":["Blendon Twp","Westerville CSD"],
+  "113":["Minerva Park Corp (Blendon Twp)","Westerville CSD"],
+  "120":["Brown Twp","Hilliard CSD"],
+  "125":["Columbus City (Brown Twp)","Hilliard CSD"],
+  "130":["Clinton Twp","Columbus CSD"],
+  "140":["Franklin Twp","South-Western CSD"],
+  "141":["Franklin Twp","Columbus CSD"],
+  "142":["Franklin Twp","Hilliard CSD"],
+  "143":["Marble Cliff Corp","Grandview Heights CSD"],
+  "145":["Columbus City (Franklin Twp)","Hilliard CSD"],
+  "263":["Truro Twp","Reynoldsburg CSD"],
+  "272":["Washington Twp","Hilliard CSD"]
+};
+/* Classify a district code.
+   Naive name-matching would flag every township, since townships never run their own
+   schools — that's normal, not a trap, and warning on it teaches you to ignore warnings.
+   The real traps are incorporated places paying into ANOTHER municipality's district,
+   or into a district from outside the county entirely.
+     level 2 = TRAP   (city/village on a different municipality's or out-of-county schools)
+     level 1 = NOTE   (township/CDP served by a city district — expected, but worth knowing)
+     level 0 = aligned */
+const INCORPORATED = [...JURIS.cities, ...JURIS.villages];
+function districtRisk(code){
+  const d = TAX_DISTRICTS[code];
+  if(!d) return {level:0};
+  const [muniRaw, school] = d;
+  const muniHead = muniRaw.split("(")[0].trim();
+  const place = INCORPORATED.find(p => muniHead.toUpperCase().startsWith(p.toUpperCase()));
+
+  if(!place){
+    /* taxing entity is a township — schools always come from somewhere else */
+    return {level:1, label:"TWP", why:`${muniHead} has no schools of its own — it's served by ${school}. Normal for a township, but it means your school district and your taxing body are different entities.`};
+  }
+  /* incorporated: does the school district belong to a DIFFERENT municipality? */
+  const owner = INCORPORATED.find(p => school.toUpperCase().startsWith(p.toUpperCase()));
+  if(owner && owner.toUpperCase() !== place.toUpperCase()){
+    return {level:2, label:"TRAP", why:`You'd be a ${place} taxpayer sending kids to ${owner}'s schools (${school}). The address says one town, the school district says another.`};
+  }
+  if(!owner && !/SOUTH-?WESTERN/i.test(school)){
+    return {level:2, label:"OUT-OF-COUNTY", why:`${place} address, but the schools are ${school} — a district based outside Franklin County. Different levies, different report cards, and it won't be obvious from the listing.`};
+  }
+  return {level:0};
+}
+const isSplitCode = c => districtRisk(c).level === 2;
+const normCode = c => { const m=String(c??"").match(/\d+/); return m ? m[0].padStart(3,"0").slice(-3) : null; };
+
+const F_DISTCODE = ["TAXDIST","TAXDISTRICT","TAXDIST_CD","CVTTXCD","CVTTXDIST","TXDIST","DISTRICT","SCHLTXCD","TAXDSTRCT","CLASSDIST"];
+const F_SALEDATE = ["SALEDATE","SALEDT","LASTSALEDATE","TRANSFERDATE","TRANSFER_DATE","SALE_DATE","DATESOLD"];
+const F_TAX      = ["TAXES","TAXAMT","ANNUALTAX","NETANNUALTAX","TOTALTAX","TAXBILL","GROSSTAX","NETTAX"];
+const F_VALUE    = ["APPRTOT","TOTALAPPR","MKTTOT","TOTALMKT","APPRAISEDTOTAL","TOTALVALUE","MARKETTOTAL"];
+const F_YEAR     = ["YEARBUILT","YRBUILT","YEARBLT","YRBLT","EFFYRBLT"];
+const F_SQFT     = ["FINSQFT","SQFT","LIVAREA","TOTALFINAREA","GRSQFT","SQFTLIV"];
+
+async function esriQuery(url, params){
+  const p = new URLSearchParams(Object.assign({f:"json"}, params));
+  const r = await fetch(url+"/query",{method:"POST",body:p});
+  const j = await r.json();
+  if(j.error) throw new Error(j.error.message || "service error");
+  return j.features || [];
+}
+const ptGeom = (lat,lng) => JSON.stringify({x:lng,y:lat,spatialReference:{wkid:4326}});
+const envGeom = (lat,lng,d) => JSON.stringify({xmin:lng-d, ymin:lat-d*0.77, xmax:lng+d, ymax:lat+d*0.77, spatialReference:{wkid:4326}});
+
+async function parcelAt(lat,lng){
+  const f = await esriQuery(PARCEL,{geometry:ptGeom(lat,lng),geometryType:"esriGeometryPoint",inSR:"4326",outSR:"4326",
+    spatialRel:"esriSpatialRelIntersects",outFields:"*",returnGeometry:"false"});
+  return f[0]||null;
+}
+async function muniAt(lat,lng){
+  try{
+    const f = await esriQuery(MUNI,{geometry:ptGeom(lat,lng),geometryType:"esriGeometryPoint",inSR:"4326",
+      spatialRel:"esriSpatialRelIntersects",outFields:"*",returnGeometry:"false"});
+    if(!f.length) return null;
+    const a=f[0].attributes;
+    return { name: pick(a,["NAME2","NAME","NAME3","MUNINAME"]) || "Unincorporated", type: pick(a,["MUNITYP","TYPE"]) || "" };
+  }catch(e){ return null; }
+}
+/* Neighbors within ~half a mile — comps, tax rate, and the stability read.
+   Pure county data: identical coverage in Dublin, Whitehall, or Prairie Twp. */
+async function neighbors(lat,lng){
+  const extras=[F_SALEDATE,F_TAX,F_VALUE,F_YEAR,F_SQFT].map(fieldOf).filter(Boolean);
+  const base=["PARCELID","SALEPRICE","OWNEROCCUPIED","RENTAL","FLOOD","PCLASS","ACRES"].filter(has);
+  const out=[...new Set(base.concat(extras))];
+  return (await esriQuery(PARCEL,{geometry:envGeom(lat,lng,0.007),geometryType:"esriGeometryEnvelope",inSR:"4326",
+    spatialRel:"esriSpatialRelIntersects", outFields: out.join(",")||"*", returnGeometry:"false",
+    where:"1=1", resultRecordCount:"1500"})).map(f=>f.attributes);
+}
+
+/* ================= ANALYZE ================= */
 async function geocode(q){
-  const url = NOMINATIM + "?format=json&limit=5&countrycodes=us&bounded=1&viewbox=" + FC_VIEWBOX + "&q=" + encodeURIComponent(q);
-  const r = await fetch(url, {headers:{"Accept":"application/json"}});
+  const r = await fetch(NOMINATIM+"?format=json&limit=5&countrycodes=us&bounded=1&viewbox="+FC_VIEWBOX+"&q="+encodeURIComponent(q));
   return r.json();
 }
-
-async function queryParcelAtPoint(lat,lng){
-  const p = new URLSearchParams({
-    f:"json", geometryType:"esriGeometryPoint", inSR:"4326", outSR:"4326",
-    spatialRel:"esriSpatialRelIntersects", outFields:"*", returnGeometry:"true",
-    geometry: JSON.stringify({x:lng,y:lat,spatialReference:{wkid:4326}})
-  });
-  const r = await fetch(PARCEL_LAYER + "/query", {method:"POST", body:p});
-  const j = await r.json();
-  if(j.error) throw new Error(j.error.message||"parcel query failed");
-  return (j.features||[])[0] || null;
-}
-
-async function queryComps(lat,lng, radiusDeg=0.006){
-  const env = { xmin:lng-radiusDeg, ymin:lat-radiusDeg*0.78, xmax:lng+radiusDeg, ymax:lat+radiusDeg*0.78, spatialReference:{wkid:4326} };
-  const p = new URLSearchParams({
-    f:"json", geometryType:"esriGeometryEnvelope", inSR:"4326",
-    spatialRel:"esriSpatialRelIntersects", outFields:"*", returnGeometry:"false",
-    where:"SALEPRICE > 20000", resultRecordCount:"400",
-    geometry: JSON.stringify(env)
-  });
-  const r = await fetch(PARCEL_LAYER + "/query", {method:"POST", body:p});
-  const j = await r.json();
-  if(j.error) return [];
-  return (j.features||[]).map(f=>f.attributes);
-}
-
-const SALE_DATE_CANDS = ["SALEDATE","SALEDT","LASTSALEDATE","TRANSFERDATE","TRANSFER_DATE","DATESOLD","SALE_DATE"];
-const TAX_CANDS = ["TAXES","TAXAMT","ANNUALTAX","NETANNUALTAX","TOTALTAX","TAXBILL"];
-const VALUE_CANDS = ["APPRTOT","TOTALAPPR","MKTTOT","TOTALMKT","APPRAISEDTOTAL","TOTALVALUE","MARKETTOTAL"];
-const YR_CANDS = ["YEARBUILT","YRBUILT","YEARBLT","YRBLT","EFFYRBLT"];
-
-function median(arr){ if(!arr.length) return null; const s=[...arr].sort((a,b)=>a-b); const m=Math.floor(s.length/2);
-  return s.length%2 ? s[m] : (s[m-1]+s[m])/2; }
-
-/* effective tax-rate presets by district keyword — ESTIMATES, editable in Costs */
-const TAX_PRESETS = [
-  ["WORTHINGTON",2.25],["DUBLIN",1.90],["UPPER ARLINGTON",2.30],["BEXLEY",2.55],
-  ["GRANDVIEW",2.35],["HILLIARD",2.15],["WESTERVILLE",2.10],["GAHANNA",2.05],
-  ["NEW ALBANY",2.20],["GROVE CITY",1.85],["REYNOLDSBURG",2.00],["WHITEHALL",1.90],
-  ["CANAL WINCHESTER",1.95],["PICKERINGTON",2.05],["SOUTH-WESTERN",1.80],["SOUTHWESTERN",1.80],
-  ["COLUMBUS",2.00],["HAMILTON",1.85],["MADISON",1.75],["PLAIN",2.10],["CLINTON",1.95]
-];
-function guessTaxRate(school, taxDist){
-  const hay = ((school||"")+" "+(taxDist||"")).toUpperCase();
-  for(const [k,v] of TAX_PRESETS) if(hay.includes(k)) return v;
-  return 2.0;
-}
-
-function firstToken(s){
-  return String(s||"").toUpperCase()
-    .replace(/\b(CITY|LOCAL|EXEMPTED|VILLAGE|SCHOOL|DISTRICT|SD|CSD|LSD|EVSD|TWP|TOWNSHIP|CORP|OF|THE)\b/g," ")
-    .trim().split(/\s+/)[0] || "";
-}
+const tokenize = s => String(s||"").toUpperCase()
+  .replace(/\b(CITY|LOCAL|EXEMPTED|VILLAGE|SCHOOL|DISTRICT|SD|CSD|LSD|EVSD|TWP|TOWNSHIP|CORP|OF|THE|AND)\b/g," ")
+  .trim().split(/\s+/)[0]||"";
 
 async function analyze(){
-  const q = $("addr-in").value.trim();
+  const q=$("addr-in").value.trim();
   if(!q){ toast("Type an address first"); return; }
-  const out = $("analyze-out");
-  out.innerHTML = `<div class="card"><span class="spin"></span> Geocoding &amp; pulling county records…</div>`;
+  const out=$("analyze-out");
+  out.innerHTML=`<div class="card"><span class="spin"></span> Geocoding…</div>`;
   try{
-    await layerFields();
-    const hits = await geocode(q + (q.match(/ohio|oh\b/i)?"":" Ohio"));
-    if(!hits.length){ out.innerHTML=`<div class="card"><div class="err">Couldn't find that address. Try adding the city and OH — e.g. "123 Main St, Westerville OH".</div></div>`; return; }
-    let hit = hits[0];
+    const hits = await geocode(q + (/ohio|\boh\b/i.test(q)?"":" Ohio"));
+    if(!hits.length){ out.innerHTML=`<div class="card"><div class="err">No match. Add the city and OH — e.g. "123 Main St, Grove City OH".</div></div>`; return; }
     if(hits.length>1){
-      // show picker
-      out.innerHTML = `<div class="card"><h2>Which one?</h2>` + hits.map((h,i)=>
-        `<button class="btn-ghost" style="width:100%;text-align:left;margin-top:6px;text-transform:none;letter-spacing:0;font-family:var(--body);font-weight:600" onclick="analyzeAt(${h.lat},${h.lon},'${esc(h.display_name).replace(/'/g,"\\'")}')">${esc(h.display_name)}</button>`).join("") + `</div>`;
+      out.innerHTML=`<div class="card"><h2>Which one?</h2>`+hits.map(h=>
+        `<button class="btn-ghost" style="width:100%;text-align:left;margin-top:6px;text-transform:none;letter-spacing:0;font-family:var(--body);font-weight:600"
+          onclick='analyzeAt(${h.lat},${h.lon},${JSON.stringify(String(h.display_name)).replace(/'/g,"&#39;")})'>${esc(h.display_name)}</button>`).join("")+`</div>`;
       return;
     }
-    await analyzeAt(parseFloat(hit.lat), parseFloat(hit.lon), hit.display_name);
+    analyzeAt(+hits[0].lat, +hits[0].lon, hits[0].display_name);
   }catch(e){
-    out.innerHTML = `<div class="card"><div class="err">Lookup failed: ${esc(e.message)}. The county GIS server hiccups sometimes — try again in a minute.</div></div>`;
+    out.innerHTML=`<div class="card"><div class="err">Geocoder failed: ${esc(e.message)}. Retry in a moment.</div></div>`;
   }
 }
 
-async function analyzeAt(lat,lng,dispName){
-  const out = $("analyze-out");
-  out.innerHTML = `<div class="card"><span class="spin"></span> Reading the parcel…</div>`;
+async function analyzeAt(lat,lng,disp){
+  const out=$("analyze-out");
+  out.innerHTML=`<div class="card"><span class="spin"></span> Reading county records…</div>`;
   try{
-    await layerFields();
-    const feat = await queryParcelAtPoint(lat,lng);
-    if(!feat){ out.innerHTML=`<div class="card"><div class="err">No Franklin County parcel at that point. If this address is in Delaware / Licking / Fairfield county, it's outside this app's records (school/tax data won't load, but Costs &amp; Map still work).</div></div>`; return; }
-    const a = feat.attributes;
-    const school = pick(a,["SCHLDSCRP","SCHLTXDSCRP"]) || "Unknown";
-    const taxDist = pick(a,["CVTTXDSCRP"]) || "Unknown";
-    const acres = pick(a,["ACRES"]);
-    const owner = pick(a,["OWNERNME1"]);
-    const parcelId = pick(a,["PARCELID"]);
-    const salePrice = pick(a,["SALEPRICE"]);
-    const saleDateRaw = pick(a, SALE_DATE_CANDS);
-    const taxAmt = pick(a, TAX_CANDS);
-    const apprTot = pick(a, VALUE_CANDS);
-    const yrBuilt = pick(a, YR_CANDS);
-    const floors = pick(a,["FLOORCOUNT"]);
-    const flood = pick(a,["FLOOD"]);
-    const ownerOcc = pick(a,["OWNEROCCUPIED"]);
-    const rental = pick(a,["RENTAL"]);
-    const useDesc = pick(a,["PCLASSDSCRP","USECD","PCLASS"]);
-
-    const sTok = firstToken(school), tTok = firstToken(taxDist);
-    const mismatch = sTok && tTok && sTok !== tTok;
-
-    const price = num("list-price");
-    const sqft  = num("list-sqft");
-    const taxRate = guessTaxRate(school, taxDist);
-
-    /* comps */
-    let comps = await queryComps(lat,lng);
-    const dateFld = fld(SALE_DATE_CANDS);
-    let recentNote = "all recorded sales nearby";
-    if(dateFld){
-      const cutoff = Date.now() - 1000*60*60*24*730; // 24 months
-      const recent = comps.filter(c => c[dateFld] && c[dateFld] > cutoff);
-      if(recent.length >= 5){ comps = recent; recentNote = "sales in the last 24 months"; }
+    await loadFields();
+    const [feat, muni] = await Promise.all([parcelAt(lat,lng), muniAt(lat,lng)]);
+    if(!feat){
+      out.innerHTML=`<div class="card"><div class="err">No Franklin County parcel there. If it's in Delaware, Licking, Fairfield, or Union county, it's outside this app's records — Costs and Map still work, but districts and comps won't load.</div></div>`;
+      return;
     }
-    const compPrices = comps.map(c=>c.SALEPRICE).filter(v=>v>20000);
-    const medComp = median(compPrices);
+    const a = feat.attributes;
+    const school  = pick(a,["SCHLDSCRP","SCHLTXDSCRP"]) || "Unknown";
+    const taxDist = pick(a,["CVTTXDSCRP"]) || "Unknown";
+    const parcelId= pick(a,["PARCELID"]);
+    const acres   = pick(a,["ACRES"]);
+    const owner   = pick(a,["OWNERNME1"]);
+    const yrBuilt = pick(a,F_YEAR);
+    const cSqft   = pick(a,F_SQFT);
+    const floors  = pick(a,["FLOORCOUNT"]);
+    const flood   = pick(a,["FLOOD"]);
+    const useDesc = pick(a,["PCLASSDSCRP","PCLASS"]);
+    const lastSale= pick(a,["SALEPRICE"]);
+    const taxAmt  = pick(a,F_TAX);
+    const apprTot = pick(a,F_VALUE);
 
-    CUR = { addr: dispName, lat, lng, attrs:a, price, sqft, taxRate, school, taxDist, mismatch,
-            medComp, nComps: compPrices.length, taxAmt, salePrice, saleDate: saleDateRaw, yrBuilt, acres };
+    const sT=tokenize(school), tT=tokenize(taxDist);
+    const mismatch = !!(sT && tT && sT!==tT);
 
-    /* pre-fill Costs + Add form */
-    if(price) $("c-price").value = price;
-    if(taxAmt && price){ $("c-taxrate").value = (taxAmt/price*100).toFixed(2); $("c-taxsrc").textContent="county actual"; $("c-taxsrc").className="badge b-pine"; }
-    else { $("c-taxrate").value = taxRate.toFixed(2); $("c-taxsrc").textContent="district est."; $("c-taxsrc").className="badge b-amber"; }
-    $("h-addr").value = dispName.split(",").slice(0,3).join(",");
-    if(price) $("h-price").value = price;
-    if(sqft) $("h-sqft").value = sqft;
-    $("h-parcel-note").innerHTML = `Will save with parcel data: <b>${esc(school)}</b> schools / <b>${esc(taxDist)}</b> taxes${mismatch?' <span class="badge b-amber">MIXED</span>':''}`;
+    /* tax district code: decode against the reference table, and cross-check it */
+    const rawCode = pick(a,F_DISTCODE);
+    const code = normCode(rawCode);
+    const known = code ? TAX_DISTRICTS[code] : null;
+    const risk = code ? districtRisk(code) : {level:0};
+    const codeSplit = risk.level===2;
+    /* does the reference table agree with what the county actually returned? */
+    const tableConflict = !!(known && school!=="Unknown" && tokenize(known[1]) !== sT);
 
-    /* proximity counts if scans have run */
-    const here = {lat,lng};
-    const sketchN = sketchPts.filter(p=>haversineMi(here,p)<=1).length;
-    const upN = upPts.filter(p=>haversineMi(here,p)<=1).length;
+    const price=num("list-price"), sqft=num("list-sqft");
 
-    /* deal gauge vs comps */
-    let gaugeHtml = "";
+    /* ---- neighbors: comps + tax rate + stability ---- */
+    let nb=[]; try{ nb = await neighbors(lat,lng); }catch(e){ nb=[]; }
+    const dF=fieldOf(F_SALEDATE), tF=fieldOf(F_TAX), vF=fieldOf(F_VALUE), qF=fieldOf(F_SQFT);
+
+    /* effective tax rate = what neighbors actually pay / county appraised value */
+    let taxRate=null, taxN=0, taxSrc="default";
+    if(tF && vF){
+      const rates = nb.filter(p=>p[tF]>100 && p[vF]>20000).map(p=>p[tF]/p[vF]*100)
+                      .filter(r=>r>0.5 && r<5);
+      if(rates.length>=8){ taxRate=median(rates); taxN=rates.length; taxSrc="derived"; }
+    }
+    if(taxRate==null && taxAmt && apprTot && apprTot>20000){ taxRate=taxAmt/apprTot*100; taxSrc="this parcel"; }
+    if(taxRate==null){ taxRate=2.0; taxSrc="fallback"; }
+
+    /* comps: prefer last 24 months */
+    let comps = nb.filter(p=>p.SALEPRICE>25000);
+    let compWindow="all recorded sales";
+    if(dF){
+      const cut=Date.now()-730*864e5;
+      const recent=comps.filter(p=>p[dF]&&p[dF]>cut);
+      if(recent.length>=5){ comps=recent; compWindow="sales in the last 24 months"; }
+    }
+    const medComp = median(comps.map(p=>p.SALEPRICE));
+    let medPSF=null;
+    if(qF){
+      const psf=comps.filter(p=>p[qF]>400).map(p=>p.SALEPRICE/p[qF]);
+      if(psf.length>=5) medPSF=median(psf);
+    }
+
+    /* stability read — county-wide substitute where suburban crime data doesn't exist */
+    const resid = nb.filter(p=>p.OWNEROCCUPIED!=null || p.RENTAL!=null);
+    const ownOcc = resid.filter(p=>p.OWNEROCCUPIED==="Y").length;
+    const rented = resid.filter(p=>p.RENTAL==="Y").length;
+    const ownPct = pct(ownOcc, resid.length);
+    const rentPct= pct(rented, resid.length);
+    const floodN = nb.filter(p=>p.FLOOD==="Y").length;
+
+    CUR={addr:disp,lat,lng,attrs:a,price,sqft,taxRate,school,taxDist,mismatch,medComp,medPSF,
+         nComps:comps.length,muni,parcelId,ownPct,rentPct};
+
+    /* push into Costs + Add form */
+    if(price) $("c-price").value=price;
+    $("c-taxrate").value = taxRate.toFixed(2);
+    const srcBadge = {derived:["b-pine","from "+taxN+" neighbors"], "this parcel":["b-pine","county actual"],
+                      fallback:["b-amber","estimate — verify"], default:["b-grey","default"]}[taxSrc];
+    $("c-taxsrc").className="badge "+srcBadge[0]; $("c-taxsrc").textContent=srcBadge[1];
+    $("h-addr").value = disp.split(",").slice(0,3).join(",");
+    if(price) $("h-price").value=price;
+    if(sqft) $("h-sqft").value=sqft;
+    $("h-parcel-note").innerHTML = `Saves with: <b>${esc(school)}</b> schools / <b>${esc(taxDist)}</b> taxes${mismatch?' <span class="badge b-amber">MIXED</span>':''}`;
+
+    /* proximity to POI scans, if any have run */
+    const here={lat,lng};
+    const sk = LAYERS.sketch?.pts||[], up = LAYERS.up?.pts||[];
+    const skN = sk.filter(p=>miles(here,p)<=1).length, upN = up.filter(p=>miles(here,p)<=1).length;
+
+    /* price gauge */
+    let gauge="";
     if(price && medComp){
-      const ratio = price/medComp;
-      const pos = Math.max(3, Math.min(97, 100 - ((ratio-0.7)/0.8)*100 ));
-      const verdict = ratio<=0.9 ? ["Priced under the neighborhood","b-pine"] :
-                      ratio<=1.05 ? ["Right at market","b-grey"] :
-                      ratio<=1.2 ? ["Paying a premium","b-amber"] : ["Well above nearby sales","b-brick"];
-      gaugeHtml = `
-        <h3 style="margin-top:14px">Vs. the neighborhood</h3>
+      const r=price/medComp, pos=Math.max(3,Math.min(97,100-((r-0.7)/0.8)*100));
+      const v = r<=0.9?["Under the neighborhood","b-pine"] : r<=1.05?["At market","b-grey"]
+              : r<=1.2?["Paying a premium","b-amber"] : ["Well above nearby sales","b-brick"];
+      gauge=`<h3 style="margin-top:14px">Vs. the neighborhood</h3>
         <div class="gauge"><i style="left:${pos}%"></i></div>
         <div class="legend"><span>Overpriced</span><span>Fair</span><span>Deal</span></div>
-        <p class="note">Median of <b class="num">${CUR.nComps}</b> ${recentNote} within ~½ mi: <b class="money">${fmt$(medComp)}</b>.
-        This listing is <b class="num">${(ratio*100-100>=0?"+":"")}${(ratio*100-100).toFixed(0)}%</b> vs that median.
-        <span class="badge ${verdict[1]}">${verdict[0]}</span></p>
-        <p class="note">County sale records include everything from tear-downs to new builds — it's a gut-check, not an appraisal.</p>`;
-    } else if(price){
-      gaugeHtml = `<p class="note">Not enough nearby recorded sales to benchmark this price.</p>`;
+        <p class="note">Median of <b class="num">${CUR.nComps}</b> ${compWindow} within ~½ mi: <b class="money">${fmt$(medComp)}</b>.
+        This listing sits <b class="num">${(r*100-100>=0?"+":"")}${(r*100-100).toFixed(0)}%</b> against it.
+        <span class="badge ${v[1]}">${v[0]}</span></p>
+        ${medPSF&&sqft?`<p class="note">Per sq ft: this home <b class="money">${fmt$(price/sqft)}</b> vs neighborhood median <b class="money">${fmt$(medPSF)}</b>.</p>`:""}
+        <p class="note">County records include tear-downs and new builds alongside normal sales — a gut-check, not an appraisal.</p>`;
     }
 
-    const commuteHtml = await commuteBlock(lat,lng);
+    /* stability block */
+    const stability = resid.length>=20 ? `
+      <h3 style="margin-top:14px">Neighborhood read <span class="badge b-grey">county data · works everywhere</span></h3>
+      <div class="bar"><i style="width:${ownPct}%;background:var(--pine)"></i></div>
+      <p class="note"><b class="num">${ownPct}%</b> owner-occupied · <b class="num">${rentPct}%</b> registered rentals, across <b class="num">${resid.length}</b> nearby parcels.
+      ${ownPct>=75?"Heavily owner-occupied — the stability signal lenders and long-term buyers look for."
+       :ownPct>=55?"Mixed but owner-leaning."
+       :"Rental-heavy block. Not automatically bad, but it moves differently than an owner-occupied street — worth a drive-by at night."}
+      ${floodN?` <span class="badge b-brick">${floodN} flood-flagged parcels nearby</span>`:""}</p>
+      <p class="note">This signal covers every jurisdiction in the county — Columbus PD's crime map stops at the city line, this doesn't.</p>` : "";
 
-    out.innerHTML = `
+    const commute = await commuteBlock(lat,lng);
+    const jur = muni ? `${muni.name}${muni.type?" ("+muni.type+")":""}` : "Franklin County";
+    const isCbus = /COLUMBUS/i.test(jur);
+
+    out.innerHTML=`
     <div class="card">
-      <h2>${esc(dispName.split(",").slice(0,2).join(","))}</h2>
+      <h2>${esc(disp.split(",").slice(0,2).join(","))}</h2>
       <div class="chips" style="margin-top:6px">
+        <span class="badge b-plum">📍 ${esc(jur)}</span>
         ${useDesc?`<span class="badge b-grey">${esc(useDesc)}</span>`:""}
-        ${flood==="Y"?'<span class="badge b-brick">FLOOD ZONE FLAG</span>':""}
-        ${rental==="Y"?'<span class="badge b-amber">REGISTERED RENTAL</span>':""}
-        ${ownerOcc==="Y"?'<span class="badge b-grey">OWNER-OCCUPIED</span>':""}
+        ${flood==="Y"?'<span class="badge b-brick">FLOOD ZONE</span>':""}
+        ${a.RENTAL==="Y"?'<span class="badge b-amber">REGISTERED RENTAL</span>':""}
       </div>
 
-      <div class="stamp ${mismatch?"":"ok"}">
-        <b>${mismatch ? "⚠ MIXED DISTRICT PARCEL" : "✓ DISTRICTS ALIGN"}</b>
-        SCHOOLS&nbsp;&nbsp;→ ${esc(school)}<br>
-        TAXES&nbsp;&nbsp;&nbsp;&nbsp;→ ${esc(taxDist)}
-        ${mismatch ? "<br>You'd pay one city's taxes for another district's schools — the classic Franklin Co. trap. Verify with the Auditor before assuming either way." : ""}
+      <div class="stamp ${(mismatch||codeSplit)?"":"ok"}">
+        <b>${(mismatch||codeSplit)?"⚠ MIXED DISTRICT PARCEL":"✓ DISTRICTS ALIGN"}</b>
+        SCHOOLS → ${esc(school)}<br>
+        TAXES&nbsp;&nbsp;&nbsp;→ ${esc(taxDist)}
+        ${code?`<br>DIST&nbsp;&nbsp;&nbsp;&nbsp;→ ${esc(code)}${known?" · "+esc(known[0])+" / "+esc(known[1]):" (not in the reference table — likely a newer annexation code)"}`:""}
+        ${codeSplit?"<br><br>"+esc(risk.why)+" This is the thing Zillow won't tell you. Confirm with the Auditor before you assume either way."
+          : mismatch?"<br><br>The county's tax district and school district don't match here. Worth confirming with the Auditor which levies you'd actually be paying."
+          : ""}
       </div>
+      ${risk.level===1?`<p class="note">ℹ️ ${esc(risk.why)}</p>`:""}
+      ${tableConflict?`<div class="warn">Heads up: district code <b>${esc(code)}</b> maps to <b>${esc(known[1])}</b> in the reference table, but the county's live record says <b>${esc(school)}</b>. The county record wins — the table is a cross-check, and annexations shift these. Worth a call to the Auditor either way.</div>`:""}
 
       <div class="kv">
         <div class="cell"><i>Parcel</i><b class="num">${esc(parcelId||"—")}</b></div>
-        <div class="cell"><i>Lot</i><b class="num">${acres!=null?acres.toFixed(2)+" ac":"—"}</b></div>
+        <div class="cell"><i>Lot</i><b class="num">${acres!=null?(+acres).toFixed(2)+" ac":"—"}</b></div>
         <div class="cell"><i>Year built (county)</i><b class="num">${esc(yrBuilt||"—")}</b></div>
-        <div class="cell"><i>Floors (county)</i><b class="num">${esc(floors||"—")}</b></div>
-        <div class="cell"><i>Last sale (county)</i><b class="num">${salePrice?fmt$(salePrice):"—"}</b></div>
-        <div class="cell"><i>County appraised</i><b class="num">${apprTot?fmt$(apprTot):"—"}</b></div>
+        <div class="cell"><i>Sq ft (county)</i><b class="num">${cSqft?(+cSqft).toLocaleString():"—"}</b></div>
+        <div class="cell"><i>Floors</i><b class="num">${esc(floors||"—")}</b></div>
+        <div class="cell"><i>Last sale</i><b class="num">${lastSale?fmt$(lastSale):"—"}</b></div>
+        <div class="cell"><i>Effective tax rate</i><b class="num">${taxRate.toFixed(2)}%</b></div>
         <div class="cell"><i>Owner of record</i><b style="font-size:12px">${esc(owner||"—")}</b></div>
-        <div class="cell"><i>Actual annual tax</i><b class="num">${taxAmt?fmt$(taxAmt):"see Costs est."}</b></div>
       </div>
+      ${cSqft && sqft && Math.abs(cSqft-sqft)/sqft>0.15
+        ? `<div class="warn">Listing says <b>${sqft.toLocaleString()}</b> sq ft, county says <b>${(+cSqft).toLocaleString()}</b>. Gaps usually mean a finished basement or an unpermitted addition. Ask.</div>`:""}
 
-      ${gaugeHtml}
+      ${gauge}
+      ${stability}
 
       <h3 style="margin-top:14px">Around here</h3>
       <p class="note">
-        🚩 Sketch signals within 1 mi: <b class="num">${sketchLG?sketchN:"scan the Map tab first"}</b><br>
-        🌈 Up-&amp;-coming signals within 1 mi: <b class="num">${upLG?upN:"scan the Map tab first"}</b><br>
-        Run the scans on the Map tab zoomed to this area, then re-analyze to fold them in.
+        🚩 Sketch signals within 1 mi: <b class="num">${sk.length?skN:"— run the scan"}</b><br>
+        🌈 Up-&amp;-coming signals within 1 mi: <b class="num">${up.length?upN:"— run the scan"}</b><br>
+        🔥 Crime map coverage here: ${isCbus?'<span class="badge b-pine">Columbus PD — heat layer applies</span>'
+          :`<span class="badge b-amber">${esc(jur)} runs its own PD — heat layer is blank here, not "safe"</span>`}
       </p>
 
-      ${commuteHtml}
+      ${commute}
 
       <div class="row" style="margin-top:12px">
         <button class="btn-primary" onclick="sendToCosts()">True monthly cost →</button>
         <button class="btn-ghost" onclick="flyToCur()">See on map</button>
       </div>
+      ${parcelId?`<p class="note" style="margin-top:10px"><a href="${AUDITOR_PARCEL}${encodeURIComponent(parcelId)}" target="_blank" rel="noopener"><b>Verify on the Auditor's site ↗</b></a></p>`:""}
       <details><summary>Every raw county field</summary>
         <table class="raw">${Object.entries(a).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table>
       </details>
     </div>`;
   }catch(e){
-    out.innerHTML = `<div class="card"><div class="err">County records lookup failed: ${esc(e.message)}. Their GIS server drops requests sometimes — retry usually works.</div></div>`;
+    out.innerHTML=`<div class="card"><div class="err">County lookup failed: ${esc(e.message)}<br><br>The Auditor's GIS drops requests under load. Retry once; if it keeps failing, run <b>Data check</b> on the Map tab.</div></div>`;
   }
 }
-
-function sendToCosts(){
-  go("costs", document.querySelector('nav button[data-tab="costs"]'));
-  calcCosts();
-}
+function sendToCosts(){ go("costs",document.querySelector('nav button[data-tab="costs"]')); calcCosts(); }
 function flyToCur(){
   if(!CUR) return;
-  go("map", document.querySelector('nav button[data-tab="map"]'));
+  go("map",document.querySelector('nav button[data-tab="map"]'));
   setTimeout(()=>{
     if(curMarker) curMarker.remove();
-    curMarker = L.marker([CUR.lat,CUR.lng]).addTo(map).bindPopup("<b>"+esc(CUR.addr.split(",")[0])+"</b>").openPopup();
-    map.setView([CUR.lat,CUR.lng], 15);
-  }, 150);
+    curMarker=L.marker([CUR.lat,CUR.lng]).addTo(map).bindPopup("<b>"+esc(CUR.addr.split(",")[0])+"</b>").openPopup();
+    map.setView([CUR.lat,CUR.lng],15);
+  },200);
 }
 
-/* =================================================================
-   COMMUTES
-   ================================================================= */
-function getWork(){ try{ return JSON.parse(localStorage.getItem("bs_work")||"{}"); }catch(e){ return {}; } }
-async function setWork(which){
-  const addr = prompt((which==="him"?"His":"Her") + " work address:");
+/* ================= commute ================= */
+const getWork = () => { try{ return JSON.parse(localStorage.getItem("bs_work")||"{}"); }catch(e){ return {}; } };
+async function setWork(who){
+  const addr=prompt((who==="him"?"His":"Her")+" work address:");
   if(!addr) return;
-  const hits = await geocode(addr);
-  if(!hits.length){ toast("Couldn't geocode that — add city + OH"); return; }
-  const w = getWork();
-  w[which] = {addr: hits[0].display_name.split(",").slice(0,3).join(","), lat:+hits[0].lat, lng:+hits[0].lon};
-  localStorage.setItem("bs_work", JSON.stringify(w));
-  toast("Saved. Re-run Analyze to see the commute.");
+  const h=await geocode(addr);
+  if(!h.length){ toast("Couldn't geocode — add city + OH"); return; }
+  const w=getWork();
+  w[who]={addr:h[0].display_name.split(",").slice(0,3).join(","),lat:+h[0].lat,lng:+h[0].lon};
+  localStorage.setItem("bs_work",JSON.stringify(w));
+  toast("Saved. Re-run Analyze to see the drive.");
 }
-async function osrmMinutes(from,to){
-  try{
-    const r = await fetch(OSRM + from.lng+","+from.lat+";"+to.lng+","+to.lat+"?overview=false");
-    const j = await r.json();
-    if(j.routes && j.routes[0]) return Math.round(j.routes[0].duration/60);
-  }catch(e){}
+async function osrmMin(a,b){
+  try{ const r=await fetch(OSRM+a.lng+","+a.lat+";"+b.lng+","+b.lat+"?overview=false");
+       const j=await r.json(); if(j.routes&&j.routes[0]) return Math.round(j.routes[0].duration/60); }catch(e){}
   return null;
 }
 async function commuteBlock(lat,lng){
-  const w = getWork();
-  let rows = "";
+  const w=getWork(); let rows="";
   for(const who of ["him","her"]){
     if(w[who]){
-      const m = await osrmMinutes({lat,lng}, w[who]);
-      rows += `<div class="li"><span>${who==="him"?"His drive":"Her drive"} · ${esc(w[who].addr.split(",")[0])}</span><span class="num">${m!=null?m+" min":"—"}</span></div>`;
+      const m=await osrmMin({lat,lng},w[who]);
+      rows+=`<div class="li"><span>${who==="him"?"His":"Her"} drive · ${esc(w[who].addr.split(",")[0])}</span><span class="num">${m!=null?m+" min":"—"}</span></div>`;
     } else {
-      rows += `<div class="li"><span>${who==="him"?"His":"Her"} work</span><span><button class="btn-ghost btn-sm" onclick="setWork('${who}')">Set address</button></span></div>`;
+      rows+=`<div class="li"><span>${who==="him"?"His":"Her"} work</span><span><button class="btn-ghost btn-sm" onclick="setWork('${who}')">Set address</button></span></div>`;
     }
   }
-  return `<h3 style="margin-top:14px">Commute (typical traffic-free drive)</h3><div class="ledger">${rows}</div>`;
+  return `<h3 style="margin-top:14px">Commute (free-flow drive)</h3><div class="ledger">${rows}</div>`;
 }
 
-/* =================================================================
-   COSTS — FHA vs Conventional + closing table
-   ================================================================= */
-function pi(loan, ratePct, years=30){
-  const r = ratePct/100/12, n = years*12;
-  if(r===0) return loan/n;
-  return loan * r / (1 - Math.pow(1+r,-n));
+/* ================= COSTS ================= */
+function pi(loan,rate,yrs=30){ const r=rate/100/12,n=yrs*12; return r===0?loan/n:loan*r/(1-Math.pow(1+r,-n)); }
+function pmiYears(loan,price,rate){
+  const t=price*0.78; let b=loan; const r=rate/100/12, p=pi(loan,rate);
+  for(let m=1;m<=360;m++){ b=b*(1+r)-p; if(b<=t) return Math.ceil(m/12); }
+  return 30;
 }
 function calcCosts(){
-  const price = num("c-price"); if(!price){ toast("Enter a price"); return; }
-  const rate = num("c-rate") ?? 6.5;
-  const dConvPct = num("c-down-conv") ?? 5, dFhaPct = Math.max(3.5, num("c-down-fha") ?? 3.5);
-  const taxRate = num("c-taxrate") ?? 2.0, insYr = num("c-ins") ?? 1400;
-  const hoa = num("c-hoa") ?? 0, pmiRate = num("c-pmi") ?? 0.55;
+  const price=num("c-price"); if(!price){ toast("Enter a price"); return; }
+  const rate=num("c-rate")??6.5, dc=num("c-down-conv")??5, df=Math.max(3.5,num("c-down-fha")??3.5);
+  const tr=num("c-taxrate")??2.0, ins=num("c-ins")??1400, hoa=num("c-hoa")??0, pmiR=num("c-pmi")??0.55;
+  const taxMo=price*tr/100/12, insMo=ins/12;
 
-  const taxMo = price*taxRate/100/12, insMo = insYr/12;
-
-  /* conventional */
-  const dConv = price*dConvPct/100, loanC = price-dConv;
-  const piC = pi(loanC, rate);
-  const pmiMo = dConvPct>=20 ? 0 : loanC*pmiRate/100/12;
+  const downC=price*dc/100, loanC=price-downC, piC=pi(loanC,rate);
+  const pmiMo = dc>=20 ? 0 : loanC*pmiR/100/12;
   const totC = piC+taxMo+insMo+pmiMo+hoa;
 
-  /* FHA: upfront MIP 1.75% financed; annual MIP .55% (>95 LTV) or .50% */
-  const dFha = price*dFhaPct/100, baseF = price-dFha;
-  const ufmip = baseF*0.0175, loanF = baseF+ufmip;
-  const ltv = baseF/price;
-  const mipAnnual = ltv>0.95 ? 0.55 : 0.50;
-  const piF = pi(loanF, rate);
-  const mipMo = loanF*mipAnnual/100/12;
+  const downF=price*df/100, baseF=price-downF, ufmip=baseF*0.0175, loanF=baseF+ufmip;
+  const mipRate = (baseF/price)>0.95 ? 0.55 : 0.50;
+  const piF=pi(loanF,rate), mipMo=loanF*mipRate/100/12;
   const totF = piF+taxMo+insMo+mipMo+hoa;
 
-  /* closing costs (either loan) */
-  const cc = {
-    "Loan origination (~1%)": loanC*0.01,
-    "Appraisal": 550, "Credit / underwriting": 350, "Title insurance & search (~0.5%)": price*0.005,
-    "Recording & county fees": 250, "Home inspection": 425, "Survey (if required)": 300
-  };
-  const prepaids = {
-    "Escrow: 6 mo property tax": taxMo*6,
-    "Escrow: 12 mo insurance": insYr,
-    "Prepaid interest (~15 days)": loanC*rate/100/365*15
-  };
-  const ccSum = Object.values(cc).reduce((a,b)=>a+b,0);
-  const ppSum = Object.values(prepaids).reduce((a,b)=>a+b,0);
+  const cc={"Loan origination (~1%)":loanC*0.01,"Appraisal":550,"Credit & underwriting":350,
+    "Title insurance & search (~0.5%)":price*0.005,"Recording & county fees":250,"Home inspection":425,"Survey (if required)":300};
+  const pp={"Escrow: 6 mo property tax":taxMo*6,"Escrow: 12 mo insurance":ins,"Prepaid interest (~15 days)":loanC*rate/100/365*15};
+  const sum=o=>Object.values(o).reduce((a,b)=>a+b,0);
+  const led=o=>Object.entries(o).map(([k,v])=>`<div class="li"><span>${k}</span><span>${fmt$(v)}</span></div>`).join("");
+  const ccS=sum(cc), ppS=sum(pp);
 
-  const ledger = (items)=>Object.entries(items).map(([k,v])=>`<div class="li"><span>${k}</span><span>${fmt$(v)}</span></div>`).join("");
-
-  const colHtml = (name, tag, down, loan, piv, miLabel, miv, tot, extra)=>`
-    <div class="card">
-      <h2>${name} <span class="badge ${tag}">${miLabel}</span></h2>
+  const col=(name,tag,down,loan,p,miL,mi,tot,extra)=>`
+    <div class="card"><h2>${name} <span class="badge ${tag}">${miL}</span></h2>
       <div class="ledger">
         <div class="li"><span>Down payment</span><span>${fmt$(down)}</span></div>
         <div class="li"><span>Loan amount</span><span>${fmt$(loan)}</span></div>
         ${extra||""}
-        <div class="li"><span>Principal &amp; interest</span><span>${fmt$(piv)}</span></div>
+        <div class="li"><span>Principal &amp; interest</span><span>${fmt$(p)}</span></div>
         <div class="li"><span>Property tax (escrow)</span><span>${fmt$(taxMo)}</span></div>
         <div class="li"><span>Home insurance</span><span>${fmt$(insMo)}</span></div>
-        <div class="li"><span>${miLabel}</span><span>${fmt$(miv)}</span></div>
+        <div class="li"><span>${miL}</span><span>${fmt$(mi)}</span></div>
         ${hoa?`<div class="li"><span>HOA</span><span>${fmt$(hoa)}</span></div>`:""}
         <div class="li total"><span>True monthly</span><span>${fmt$(tot)}</span></div>
-      </div>
-    </div>`;
+      </div></div>`;
 
   $("costs-out").innerHTML =
-    colHtml("Conventional","b-pine", dConv, loanC, piC, pmiMo? "PMI":"No PMI (20%+ down)", pmiMo, totC,
-      pmiMo?`<div class="sub">PMI drops off automatically at 78% LTV — roughly ${estPmiYears(loanC,price,rate)} yrs at this pace.</div>`:"")
-  + colHtml("FHA","b-plum", dFha, loanF, piF, "Monthly MIP", mipMo, totF,
+    col("Conventional","b-pine",downC,loanC,piC, pmiMo?"PMI":"No PMI (20%+ down)", pmiMo, totC,
+      pmiMo?`<div class="sub">PMI cancels automatically at 78% LTV — about ${pmiYears(loanC,price,rate)} years at this payment.</div>`:"")
+  + col("FHA","b-plum",downF,loanF,piF,"Monthly MIP",mipMo,totF,
       `<div class="li"><span>Upfront MIP 1.75% (financed)</span><span>${fmt$(ufmip)}</span></div>
-       <div class="sub">FHA MIP sticks for the life of the loan when you put under 10% down — the usual exit is refinancing to conventional later.</div>`)
-  + `<div class="card">
-      <h2>Head to head</h2>
-      <div class="ledger">
+       <div class="sub">Under 10% down, FHA MIP lasts the life of the loan. The usual exit is refinancing to conventional once you have equity.</div>`)
+  + `<div class="card"><h2>Head to head</h2><div class="ledger">
         <div class="li"><span>Conventional monthly</span><span>${fmt$(totC)}</span></div>
         <div class="li"><span>FHA monthly</span><span>${fmt$(totF)}</span></div>
         <div class="li total"><span>${totC<totF?"Conventional":"FHA"} wins by</span><span>${fmt$(Math.abs(totC-totF))}/mo</span></div>
       </div>
-      <p class="note">FHA usually wins on the down payment and looser credit; conventional usually wins long-run because PMI cancels and MIP doesn't. Rates also differ between the two in real quotes — plug in what a lender actually offers you.</p>
-    </div>
-    <div class="card">
-      <h2>The closing table 🧾</h2>
-      <p class="note">This is the part nobody warns you about: the price is not what you need. Cash to close = down payment + closing costs + prepaids.</p>
-      <h3>Closing costs</h3><div class="ledger">${ledger(cc)}
-        <div class="li total"><span>Subtotal</span><span>${fmt$(ccSum)}</span></div></div>
-      <h3 style="margin-top:12px">Prepaids &amp; escrow</h3><div class="ledger">${ledger(prepaids)}
-        <div class="li total"><span>Subtotal</span><span>${fmt$(ppSum)}</span></div></div>
+      <p class="note">FHA wins on down payment and credit flexibility. Conventional usually wins long-run because PMI cancels and MIP doesn't. Real quotes price the two differently — plug in what a lender actually offers.</p></div>
+    <div class="card"><h2>The closing table 🧾</h2>
+      <p class="note">The part nobody warns you about. Cash to close = down payment + closing costs + prepaids.</p>
+      <h3>Closing costs</h3><div class="ledger">${led(cc)}<div class="li total"><span>Subtotal</span><span>${fmt$(ccS)}</span></div></div>
+      <h3 style="margin-top:12px">Prepaids &amp; escrow</h3><div class="ledger">${led(pp)}<div class="li total"><span>Subtotal</span><span>${fmt$(ppS)}</span></div></div>
       <h3 style="margin-top:12px">Cash to close</h3>
       <div class="ledger">
-        <div class="li"><span>Conventional (${dConvPct}% down)</span><span>${fmt$(dConv+ccSum+ppSum)}</span></div>
-        <div class="li total"><span>FHA (${dFhaPct}% down)</span><span>${fmt$(dFha+ccSum+ppSum)}</span></div>
+        <div class="li"><span>Conventional (${dc}% down)</span><span>${fmt$(downC+ccS+ppS)}</span></div>
+        <div class="li total"><span>FHA (${df}% down)</span><span>${fmt$(downF+ccS+ppS)}</span></div>
       </div>
-      <p class="note">Good news for Ohio: the transfer tax is customarily the <b>seller's</b> bill here. Sellers can also chip in toward your closing costs (up to 6% FHA / 3–9% conventional depending on down payment) — worth negotiating in a slow market.</p>
-      <p class="note">Everything above is a good-faith estimate for planning. Your lender's official Loan Estimate is the real number.</p>
+      <p class="note">Ohio quirk in your favor: transfer tax is customarily the <b>seller's</b> bill here. Sellers can also credit you toward closing costs — up to 6% on FHA, 3–9% conventional depending on down payment. Always worth asking for.</p>
+      <p class="note">Good-faith planning estimates. Your lender's Loan Estimate is the number that counts.</p>
     </div>`;
-
-  if(CUR) CUR.monthlyEst = Math.min(totC,totF);
+  if(CUR) CUR.monthlyEst=Math.min(totC,totF);
   window.scrollTo({top:0});
 }
-function estPmiYears(loan, price, rate){
-  const target = price*0.78; let bal = loan; const r = rate/100/12; const pay = pi(loan,rate);
-  for(let m=1;m<=360;m++){ bal = bal*(1+r)-pay; if(bal<=target) return Math.ceil(m/12); }
-  return "30";
-}
 
-/* =================================================================
-   MAP + OVERLAYS
-   ================================================================= */
+/* ================= MAP — auto-populating layers ================= */
+const BASE_LABEL={crime:"🔥 Crime heat",sketch:"🚩 Sketch signals",up:"🌈 Up &amp; coming",ponds:"🎣 Ponds",homes:"🏠 Our list"};
 function initMap(){
-  if(map){ setTimeout(()=>map.invalidateSize(),60); return; }
-  map = L.map("map").setView([39.9832,-82.9988], 11);
+  if(map){ setTimeout(()=>map.invalidateSize(),80); return; }
+  const start = CUR ? [CUR.lat,CUR.lng] : [39.9832,-82.9988];
+  map = L.map("map").setView(start, CUR?15:13);   /* opens at neighborhood zoom — scans work immediately */
   L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
     {maxZoom:19, attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
-  sketchLG = L.layerGroup(); upLG = L.layerGroup(); pondLG = L.layerGroup(); homesLG = L.layerGroup();
+  for(const k of ["crime","sketch","up","ponds","homes"]) LAYERS[k]={on:false,group:L.layerGroup(),tile:null,pts:[]};
+  map.on("moveend", ()=>{ clearTimeout(moveTimer); moveTimer=setTimeout(refreshLayers,600); });
+  setTimeout(()=>map.invalidateSize(),120);
 }
-function toggleCrime(){
+function chip(k){ return $("ly-"+k); }
+function setChip(k,state,label){
+  const c=chip(k); c.classList.remove("on","busy","fail");
+  if(state) c.classList.add(state);
+  if(label) c.innerHTML=label;
+}
+async function toggleLayer(k){
   initMap();
-  const b = $("ly-crime");
-  if(crimeLayer){ map.removeLayer(crimeLayer); crimeLayer=null; b.classList.remove("on"); return; }
-  crimeLayer = L.tileLayer(CRIME_TILES, {opacity:0.55, maxNativeZoom:15, maxZoom:19,
-    attribution:"Columbus Div. of Police"}).addTo(map);
-  b.classList.add("on");
-  toast("Columbus PD incident density. Suburbs (Westerville, Dublin, etc.) have their own PDs — no shading there doesn't mean no crime.");
+  const Lr=LAYERS[k];
+  Lr.on = !Lr.on;
+  if(!Lr.on){
+    map.removeLayer(Lr.group);
+    if(k==="crime" && Lr.tile){ map.removeLayer(Lr.tile); Lr.tile=null; }
+    Lr.pts=[]; setChip(k,null,BASE_LABEL[k]);
+    return;
+  }
+  await runLayer(k);
 }
-async function overpass(q){
-  const r = await fetch(OVERPASS, {method:"POST",
-    headers:{"Content-Type":"application/x-www-form-urlencoded"},
-    body:"data="+encodeURIComponent(q)});
-  if(!r.ok) throw new Error("Overpass "+r.status);
-  return r.json();
+function refreshLayers(){ for(const k of ["sketch","up","ponds"]) if(LAYERS[k]?.on) runLayer(k); }
+async function runLayer(k){
+  if(k==="crime")  return layerCrime();
+  if(k==="homes")  return layerHomes();
+  if(k==="ponds")  return layerOverpass(k, QPONDS(), "#1F7A5C", tagsPond);
+  if(k==="sketch") return layerOverpass(k, QSKETCH(), "#B3402E", tagsSketch);
+  if(k==="up")     return layerOverpass(k, QUP(), "#7C4D8F", tagsUp);
 }
-function bboxStr(){
-  const b = map.getBounds();
-  return b.getSouth().toFixed(5)+","+b.getWest().toFixed(5)+","+b.getNorth().toFixed(5)+","+b.getEast().toFixed(5);
-}
-function dot(lat,lng,color,label){
-  return L.circleMarker([lat,lng],{radius:7,color:"#fff",weight:1.5,fillColor:color,fillOpacity:0.92})
-          .bindPopup(label);
-}
-function elPt(el){ return el.type==="node" ? {lat:el.lat,lng:el.lon} : (el.center?{lat:el.center.lat,lng:el.center.lon}:null); }
 
-async function scanSketch(){
-  initMap();
-  if(map.getZoom()<12){ toast("Zoom in to a neighborhood first — this scans what's on screen."); return; }
-  const b = $("ly-sketch"); b.classList.add("on"); b.innerHTML="🚩 Scanning…";
-  const bb = bboxStr();
-  const q = `[out:json][timeout:30];
-  (
-    nwr["shop"="mobile_phone"]["name"~"Boost|Cricket|Metro",i](${bb});
-    nwr["shop"="pawnbroker"](${bb});
-    nwr["shop"="money_lender"](${bb});
-    nwr["amenity"="money_transfer"](${bb});
-    nwr["shop"="variety_store"](${bb});
-    nwr["name"~"Check ?Smart|Check ?Cash|Advance America|CashLand|Title ?Max|ACE Cash|LoanMax|payday",i](${bb});
-    nwr["healthcare:speciality"~"substance_abuse|addiction",i](${bb});
-    nwr["name"~"methadone|suboxone|comprehensive treatment",i]["amenity"!="pharmacy"](${bb});
-    nwr["name"~"plasma",i]["amenity"~"clinic|doctors|blood_donation"](${bb});
-    nwr["amenity"="blood_donation"]["name"~"plasma|CSL|Biolife|Octapharma",i](${bb});
-  );
-  out center 300;`;
+/* --- crime tiles (Columbus PD jurisdiction) --- */
+function layerCrime(){
+  const Lr=LAYERS.crime;
+  setChip("crime","busy","🔥 Loading…");
+  let got=0, failed=0;
+  Lr.tile = L.tileLayer(CRIME,{opacity:0.55,maxNativeZoom:15,maxZoom:19,attribution:"Columbus Div. of Police"});
+  Lr.tile.on("tileload", ()=>{ got++; if(got===1) setChip("crime","on","🔥 Crime heat"); });
+  Lr.tile.on("tileerror", ()=>{ failed++;
+    if(failed>6 && got===0){ setChip("crime","fail","🔥 Crime — failed");
+      toast("Crime tiles didn't load. Run <b>Data check</b> below — if the tile service is down it's on Columbus's end, not yours."); } });
+  Lr.tile.addTo(map);
+  setTimeout(()=>{ if(got===0 && failed===0) setChip("crime","on","🔥 Crime heat"); },2500);
+  toast("Heat = Columbus PD incident density. Dublin, Westerville, Grove City etc. run their own departments — blank there means <b>no data</b>, not no crime. Use the owner-occupancy read on Analyze for those areas.",7000);
+}
+
+/* --- Overpass layers: mirror fallback + real error surfacing --- */
+function bbox(){ const b=map.getBounds();
+  return [b.getSouth().toFixed(5),b.getWest().toFixed(5),b.getNorth().toFixed(5),b.getEast().toFixed(5)].join(","); }
+async function overpass(q){
+  let lastErr="";
+  for(const url of OVERPASS){
+    try{
+      const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},
+        body:"data="+encodeURIComponent(q)});
+      if(r.status===429 || r.status===504){ lastErr="rate-limited ("+r.status+")"; continue; }
+      if(!r.ok){ lastErr="HTTP "+r.status; continue; }
+      return await r.json();
+    }catch(e){ lastErr=e.message; }
+  }
+  throw new Error(lastErr||"all Overpass mirrors unreachable");
+}
+async function layerOverpass(k,q,color,tagger){
+  const Lr=LAYERS[k];
+  if(map.getZoom()<12){
+    setChip(k,"fail",BASE_LABEL[k]+" — zoom in");
+    $("map-status").innerHTML=`<span style="color:var(--brick)">Zoom in one or two steps — a POI scan across the whole county would time out. Neighborhood level works.</span>`;
+    return;
+  }
+  setChip(k,"busy",BASE_LABEL[k].split(" ")[0]+" Scanning…");
   try{
-    const j = await overpass(q);
-    sketchLG.clearLayers(); sketchPts=[];
+    const j=await overpass(q);
+    Lr.group.clearLayers(); Lr.pts=[];
     let n=0;
     for(const el of j.elements||[]){
-      const p = elPt(el); if(!p) continue;
-      const name = (el.tags&&el.tags.name)||"(unnamed)";
-      const kind = classifySketch(el.tags||{});
-      sketchPts.push({...p, name, kind});
-      dot(p.lat,p.lng,"#B3402E",`<b>${esc(name)}</b><br>${esc(kind)}`).addTo(sketchLG); n++;
+      const p = el.type==="node" ? {lat:el.lat,lng:el.lon} : (el.center?{lat:el.center.lat,lng:el.center.lon}:null);
+      if(!p) continue;
+      const t=el.tags||{}, name=t.name||"(unnamed)", kind=tagger(t);
+      Lr.pts.push({lat:p.lat,lng:p.lng,name,kind});
+      L.circleMarker([p.lat,p.lng],{radius:7,color:"#fff",weight:1.5,fillColor:color,fillOpacity:.92})
+       .bindPopup("<b>"+esc(name)+"</b><br>"+esc(kind)).addTo(Lr.group);
+      n++;
     }
-    sketchLG.addTo(map);
-    b.innerHTML = `🚩 Sketch (${n})`;
-    $("map-out").innerHTML = summarizeScan("Sketch signals in view", n,
-      "Prepaid phone stores, pawn / payday / title loans, plasma centers, dollar stores, and addiction-treatment clinics. One or two nearby means nothing; a cluster tells you about the block. It's a proxy, not a verdict — pair it with the crime layer and a drive-by.");
-  }catch(e){ b.classList.remove("on"); b.innerHTML="🚩 Sketch signals"; toast("Overpass is busy — wait ~30s and retry (free service, rate-limited)."); }
+    Lr.group.addTo(map);
+    setChip(k,"on",BASE_LABEL[k]+" ("+n+")");
+    $("map-out").innerHTML = BLURB[k](n);
+    $("map-status").innerHTML = "Layers refill automatically when you pan or zoom.";
+  }catch(e){
+    setChip(k,"fail",BASE_LABEL[k]+" — failed");
+    $("map-status").innerHTML=`<span style="color:var(--brick)">Overpass: ${esc(e.message)}. It's a free rate-limited service — wait ~30s and tap the chip again. All three mirrors were tried.</span>`;
+  }
 }
-function classifySketch(t){
-  if(t["healthcare:speciality"] || /methadone|suboxone|comprehensive treatment/i.test(t.name||"")) return "Addiction treatment clinic";
-  if(/plasma|CSL|Biolife|Octapharma/i.test(t.name||"")) return "Plasma center";
+const QSKETCH = () => { const bb=bbox(); return `[out:json][timeout:25];
+(
+ nwr["shop"="mobile_phone"](${bb});
+ nwr["shop"="pawnbroker"](${bb});
+ nwr["shop"="money_lender"](${bb});
+ nwr["amenity"="money_transfer"](${bb});
+ nwr["shop"="variety_store"](${bb});
+ nwr["name"~"check ?smart|check ?cash|advance america|cashland|title ?max|ace cash|loanmax|payday|cash ?express",i](${bb});
+ nwr["healthcare:speciality"~"addiction|substance",i](${bb});
+ nwr["healthcare"="addiction"](${bb});
+ nwr["name"~"methadone|suboxone|comprehensive treatment|treatment cent|recovery cent|opioid",i](${bb});
+ nwr["name"~"plasma|biolife|octapharma",i](${bb});
+ nwr["amenity"="blood_donation"](${bb});
+);
+out center 400;`; };
+const QUP = () => { const bb=bbox(); return `[out:json][timeout:25];
+(
+ nwr["lgbtq"](${bb});
+ nwr["gay"](${bb});
+ nwr["craft"="brewery"](${bb});
+ nwr["microbrewery"="yes"](${bb});
+ nwr["shop"="coffee"](${bb});
+ nwr["amenity"="cafe"](${bb});
+ nwr["leisure"="fitness_centre"]["sport"~"yoga|pilates|climbing",i](${bb});
+ nwr["leisure"="climbing"](${bb});
+ nwr["shop"="records"](${bb});
+ nwr["shop"="art"](${bb});
+ nwr["amenity"="arts_centre"](${bb});
+ nwr["shop"="second_hand"](${bb});
+);
+out center 400;`; };
+const QPONDS = () => { const c = CUR ? [CUR.lat,CUR.lng] : [map.getCenter().lat,map.getCenter().lng];
+  return `[out:json][timeout:25];
+( nwr["natural"="water"]["water"!~"river|stream|canal|ditch|wastewater"](around:2400,${c[0]},${c[1]}) ; );
+out center 150;`; };
+
+function tagsSketch(t){
+  if(t.healthcare==="addiction"||/addiction|substance/i.test(t["healthcare:speciality"]||"")||/methadone|suboxone|treatment cent|recovery cent|opioid/i.test(t.name||"")) return "Addiction / methadone clinic";
+  if(/plasma|biolife|octapharma/i.test(t.name||"")||t.amenity==="blood_donation") return "Plasma center";
   if(t.shop==="pawnbroker") return "Pawn shop";
-  if(t.shop==="money_lender"||/payday|title ?max|loanmax|advance america|cashland|check ?smart|check ?cash|ace cash/i.test(t.name||"")) return "Payday / title / check cashing";
+  if(t.shop==="money_lender"||/check ?smart|check ?cash|advance america|cashland|title ?max|ace cash|loanmax|payday|cash ?express/i.test(t.name||"")) return "Payday / title / check cashing";
   if(t.shop==="variety_store") return "Dollar store";
-  if(t.shop==="mobile_phone") return "Prepaid phone store";
+  if(t.shop==="mobile_phone") return /boost|cricket|metro|straight ?talk|simple mobile/i.test(t.name||"") ? "Prepaid phone store" : "Phone store";
   if(t.amenity==="money_transfer") return "Money transfer";
   return "Signal";
 }
-async function scanUp(){
-  initMap();
-  if(map.getZoom()<12){ toast("Zoom in to a neighborhood first — this scans what's on screen."); return; }
-  const b = $("ly-up"); b.classList.add("on"); b.innerHTML="🌈 Scanning…";
-  const bb = bboxStr();
-  const q = `[out:json][timeout:30];
-  (
-    nwr["lgbtq"](${bb});
-    nwr["amenity"="bar"]["lgbtq"](${bb});
-    nwr["craft"="brewery"](${bb});
-    nwr["microbrewery"="yes"](${bb});
-    nwr["shop"="coffee"](${bb});
-    nwr["amenity"="cafe"]["name"~"roast|espresso|coffee co|brew",i](${bb});
-    nwr["leisure"="fitness_centre"]["sport"~"yoga|pilates|climbing",i](${bb});
-    nwr["shop"="records"](${bb});
-    nwr["shop"="art"](${bb});
-    nwr["amenity"="cafe"]["cuisine"~"vegan|vegetarian",i](${bb});
-  );
-  out center 300;`;
-  try{
-    const j = await overpass(q);
-    upLG.clearLayers(); upPts=[];
-    let n=0;
-    for(const el of j.elements||[]){
-      const p = elPt(el); if(!p) continue;
-      const name = (el.tags&&el.tags.name)||"(unnamed)";
-      const kind = classifyUp(el.tags||{});
-      upPts.push({...p, name, kind});
-      dot(p.lat,p.lng,"#7C4D8F",`<b>${esc(name)}</b><br>${esc(kind)}`).addTo(upLG); n++;
-    }
-    upLG.addTo(map);
-    b.innerHTML = `🌈 Up &amp; coming (${n})`;
-    $("map-out").innerHTML = summarizeScan("Gentrification-front signals in view", n,
-      "LGBTQ+ venues, craft breweries, third-wave coffee, yoga/climbing studios, record and art shops. In Columbus these show up 3–7 years before the price curve does — the Short North, Franklinton, and Olde Towne East all followed this script. Cluster + still-cheap listings = the zone you're hunting.");
-  }catch(e){ b.classList.remove("on"); b.innerHTML="🌈 Up &amp; coming"; toast("Overpass is busy — wait ~30s and retry."); }
-}
-function classifyUp(t){
-  if(t.lgbtq) return "LGBTQ+ venue";
+function tagsUp(t){
+  if(t.lgbtq||t.gay) return "LGBTQ+ venue";
   if(t.craft==="brewery"||t.microbrewery==="yes") return "Craft brewery";
-  if(t.shop==="coffee"||/roast|espresso|coffee co|brew/i.test(t.name||"")) return "Specialty coffee";
-  if(t.leisure==="fitness_centre") return "Yoga / climbing studio";
+  if(t.shop==="coffee") return "Specialty coffee roaster";
+  if(t.amenity==="cafe") return "Café";
+  if(t.leisure==="climbing") return "Climbing gym";
+  if(t.leisure==="fitness_centre") return "Yoga / pilates studio";
   if(t.shop==="records") return "Record shop";
-  if(t.shop==="art") return "Art shop / gallery";
-  if(t.cuisine) return "Vegan / veg café";
+  if(t.shop==="art"||t.amenity==="arts_centre") return "Gallery / arts";
+  if(t.shop==="second_hand") return "Vintage / second-hand";
   return "Signal";
 }
-async function scanPonds(){
-  initMap();
-  const center = CUR ? [CUR.lat,CUR.lng] : [map.getCenter().lat, map.getCenter().lng];
-  const b = $("ly-ponds"); b.classList.add("on"); b.innerHTML="🎣 Scanning…";
-  const q = `[out:json][timeout:30];
-  ( nwr["natural"="water"]["water"!~"river|stream|canal|ditch"](around:2400,${center[0]},${center[1]}); );
-  out center 120;`;
-  try{
-    const j = await overpass(q);
-    pondLG.clearLayers();
-    let n=0;
-    for(const el of j.elements||[]){
-      const p = elPt(el); if(!p) continue;
-      const name = (el.tags&&el.tags.name)||"Unnamed water";
-      dot(p.lat,p.lng,"#1F7A5C",`<b>${esc(name)}</b><br>Water within ~1.5 mi`).addTo(pondLG); n++;
+function tagsPond(){ return "Water — cross-check QuietWater for bank access"; }
+
+const BLURB={
+  sketch:n=>`<div class="card"><h2>Sketch signals in view: <span class="num">${n}</span></h2>
+    <p class="note">Prepaid phone stores, pawn shops, payday/title/check-cashing, dollar stores, plasma centers, and methadone/addiction clinics. One of anything means nothing — a <b>cluster</b> tells you about the block. It's a proxy, not a verdict; pair it with the owner-occupancy read on Analyze and an actual drive-by.</p></div>`,
+  up:n=>`<div class="card"><h2>Up-&amp;-coming signals in view: <span class="num">${n}</span></h2>
+    <p class="note">LGBTQ+ venues, craft breweries, specialty coffee, yoga/climbing studios, record shops, galleries, vintage stores. In Columbus these land 3–7 years ahead of the price curve — Short North, Franklinton, and Olde Towne East all ran this playbook. A cluster next to still-cheap listings is the zone you're hunting.</p></div>`,
+  ponds:n=>`<div class="card"><h2>Water within ~1.5 mi: <span class="num">${n}</span></h2>
+    <p class="note">Every pond and lake nearby, public or not. QuietWater tells you which ones you can actually fish from the bank.</p></div>`
+};
+function layerHomes(){
+  const Lr=LAYERS.homes; Lr.group.clearLayers();
+  let n=0;
+  for(const h of HOMES){
+    if(h.lat&&h.lng){
+      L.marker([h.lat,h.lng]).bindPopup(
+        "<b>"+esc(h.address)+"</b><br>"+fmt$(h.price)+(h.monthly_est?" · "+fmt$(h.monthly_est)+"/mo":"")
+        +(h.listing_url?'<br><a href="'+esc(h.listing_url)+'" target="_blank">Open listing ↗</a>':"")).addTo(Lr.group);
+      n++;
     }
-    pondLG.addTo(map);
-    b.innerHTML = `🎣 Ponds (${n})`;
-    toast(CUR ? n+" water bodies within ~1.5 mi of the analyzed home. Cross-check QuietWater for which ones you can actually fish." 
-              : n+" water bodies near map center.");
-  }catch(e){ b.classList.remove("on"); b.innerHTML="🎣 Ponds"; toast("Overpass is busy — retry in ~30s."); }
-}
-function summarizeScan(title,n,body){
-  return `<div class="card"><h2>${title}: <span class="num">${n}</span></h2><p class="note">${body}</p></div>`;
+  }
+  Lr.group.addTo(map);
+  setChip("homes","on","🏠 Our list ("+n+")");
+  if(!n) toast("No saved homes with coordinates yet — run Analyze before saving and they'll pin here.");
 }
 
-/* =================================================================
-   SHARED LIST (Supabase)
-   ================================================================= */
+/* ================= diagnostics ================= */
+async function runDiag(){
+  const out=$("diag-out");
+  out.innerHTML=`<p class="note"><span class="spin"></span> Testing…</p>`;
+  const tests=[
+    ["County parcels", async()=>{ const r=await fetch(PARCEL+"?f=json"); const j=await r.json();
+      if(!j.fields) throw new Error("no fields"); return (j.fields.length)+" fields"; }],
+    ["Municipal boundaries", async()=>{ const r=await fetch(MUNI+"?f=json"); const j=await r.json();
+      if(j.error) throw new Error(j.error.message); return j.name||"ok"; }],
+    ["Crime tiles (CPD)", async()=>{ const u=CRIME.replace("{z}","12").replace("{y}","1552").replace("{x}","1108");
+      await fetch(u,{mode:"no-cors"}); return "reachable"; }],
+    ["Overpass (POI scans)", async()=>{ await overpass("[out:json][timeout:10];node(39.960,-83.010,39.965,-83.005);out 1;");
+      return "responding"; }],
+    ["Geocoder (Nominatim)", async()=>{ const r=await fetch(NOMINATIM+"?format=json&limit=1&q=Columbus+Ohio");
+      const j=await r.json(); return j.length?"ok":"no results"; }],
+    ["Routing (OSRM)", async()=>{ const r=await fetch(OSRM+"-83.0,39.96;-83.02,39.99?overview=false");
+      const j=await r.json(); return j.code||"ok"; }]
+  ];
+  let html="";
+  for(const [name,fn] of tests){
+    try{ const v=await fn(); html+=`<div class="li"><span>${name}</span><span style="color:var(--pine)">✓ ${esc(v)}</span></div>`; }
+    catch(e){ html+=`<div class="li"><span>${name}</span><span style="color:var(--brick)">✕ ${esc(String(e.message)).slice(0,40)}</span></div>`; }
+    out.innerHTML=html;
+  }
+  out.innerHTML=html+`<p class="note">A red Overpass line is almost always rate-limiting — it clears in under a minute. A red county line means the Auditor's server is having a moment; retry.</p>`;
+}
+
+/* ================= SHARED LIST ================= */
 let SB=null, HOMES=[], WHO=localStorage.getItem("bs_who")||"", FILTER="all";
 function setWho(w){ WHO=w; localStorage.setItem("bs_who",w);
   $("who-him").classList.toggle("on",w==="him"); $("who-her").classList.toggle("on",w==="her"); }
 function initList(){
-  const url=localStorage.getItem("bs_sb_url"), key=localStorage.getItem("bs_sb_key"), hh=localStorage.getItem("bs_house");
-  if(url) $("sb-url").value=url; if(key) $("sb-key").value=key; if(hh) $("sb-house").value=hh;
+  const u=localStorage.getItem("bs_sb_url"), k=localStorage.getItem("bs_sb_key"), h=localStorage.getItem("bs_house");
+  if(u)$("sb-url").value=u; if(k)$("sb-key").value=k; if(h)$("sb-house").value=h;
   if(WHO) setWho(WHO);
-  if(url&&key&&hh&&!SB) connectSB(true);
+  if(u&&k&&h&&!SB) connectSB(true);
 }
 async function connectSB(silent){
-  const url=$("sb-url").value.trim(), key=$("sb-key").value.trim(), hh=$("sb-house").value.trim();
-  if(!url||!key||!hh){ if(!silent) toast("Fill in all three fields"); return; }
-  if(!WHO){ if(!silent) toast("Pick Him or Her — ratings need to know whose thumb this is"); return; }
-  localStorage.setItem("bs_sb_url",url); localStorage.setItem("bs_sb_key",key); localStorage.setItem("bs_house",hh);
+  const u=$("sb-url").value.trim(), k=$("sb-key").value.trim(), h=$("sb-house").value.trim();
+  if(!u||!k||!h){ if(silent!==true) toast("Fill in all three"); return; }
+  if(!WHO){ if(silent!==true) toast("Pick Him or Her — the stars need to know whose thumb this is"); return; }
+  localStorage.setItem("bs_sb_url",u); localStorage.setItem("bs_sb_key",k); localStorage.setItem("bs_house",h);
   try{
-    SB = window.supabase.createClient(url,key);
+    SB=window.supabase.createClient(u,k);
     await loadHomes();
-    $("sb-setup").style.display="none";
-    $("list-controls").style.display="block";
-    document.querySelectorAll("#list-filters .chip").forEach(c=>c.onclick=()=>{ 
+    $("sb-setup").style.display="none"; $("list-controls").style.display="block";
+    document.querySelectorAll("#list-filters .chip").forEach(c=>c.onclick=()=>{
       document.querySelectorAll("#list-filters .chip").forEach(x=>x.classList.remove("on"));
       c.classList.add("on"); FILTER=c.dataset.f; renderList(); });
-    /* realtime: her phone updates when you save, and vice versa */
     SB.channel("homes-live").on("postgres_changes",{event:"*",schema:"public",table:"homes"},()=>loadHomes()).subscribe();
-  }catch(e){ toast("Couldn't connect: "+esc(e.message)); SB=null; }
+  }catch(e){ toast("Connect failed: "+esc(e.message)); SB=null; }
 }
 async function loadHomes(){
-  const hh=localStorage.getItem("bs_house");
-  const {data,error} = await SB.from("homes").select("*").eq("household",hh).order("created_at",{ascending:false});
+  const h=localStorage.getItem("bs_house");
+  const {data,error}=await SB.from("homes").select("*").eq("household",h).order("created_at",{ascending:false});
   if(error){ toast("Load failed: "+esc(error.message)); return; }
-  HOMES = data||[]; renderList();
+  HOMES=data||[]; renderList();
+  if(LAYERS.homes && LAYERS.homes.on) layerHomes();
 }
 function descScan(){
-  const d = $("h-desc").value;
-  if(!d) return;
-  const roof = d.match(/(?:new\s+)?roof[^.]{0,40}?((?:19|20)\d{2})/i) || d.match(/((?:19|20)\d{2})[^.]{0,25}roof/i);
-  const hvac = d.match(/(?:hvac|furnace|a\/?c|air condition)[^.]{0,40}?((?:19|20)\d{2})/i) || d.match(/((?:19|20)\d{2})[^.]{0,30}(?:hvac|furnace)/i);
-  if(roof && !$("h-roof").value) $("h-roof").value=roof[1];
-  if(hvac && !$("h-hvac").value) $("h-hvac").value=hvac[1];
+  const d=$("h-desc").value; if(!d) return;
+  const roof=d.match(/(?:new\s+)?roof[^.]{0,40}?((?:19|20)\d{2})/i)||d.match(/((?:19|20)\d{2})[^.]{0,25}roof/i);
+  const hv=d.match(/(?:hvac|furnace|a\/?c|air condition)[^.]{0,40}?((?:19|20)\d{2})/i)||d.match(/((?:19|20)\d{2})[^.]{0,30}(?:hvac|furnace)/i);
+  if(roof&&!$("h-roof").value) $("h-roof").value=roof[1];
+  if(hv&&!$("h-hvac").value) $("h-hvac").value=hv[1];
   if(!$("h-cond").value){
     if(/fully remodel|completely renovat|gut renovat|down to the studs/i.test(d)) $("h-cond").value="Remodeled";
     else if(/updated|renovated|new kitchen|new bath/i.test(d)) $("h-cond").value="Updated";
     else if(/as-is|as is|handyman|TLC|investor special|needs work|fixer/i.test(d)) $("h-cond").value="Needs work";
   }
-  const flags=[];
-  if(/new roof/i.test(d)) flags.push("new roof");
-  if(/new hvac|new furnace|new a\/?c/i.test(d)) flags.push("new HVAC");
-  if(/as-is|as is|handyman|TLC|investor/i.test(d)) flags.push("⚠️ sold-as-is language");
-  if(flags.length) toast("Description scan: "+flags.join(" · "));
+  const f=[];
+  if(/new roof/i.test(d)) f.push("new roof");
+  if(/new hvac|new furnace|new a\/?c/i.test(d)) f.push("new HVAC");
+  if(/as-is|as is|handyman|TLC|investor/i.test(d)) f.push("⚠️ sold-as-is language");
+  if(f.length) toast("Description scan: "+f.join(" · "));
 }
-$("h-desc").addEventListener("blur", descScan);
+$("h-desc").addEventListener("blur",descScan);
 
 async function saveHome(){
   if(!SB){ toast("Connect Supabase first"); return; }
   descScan();
-  const kw = ($("h-desc").value.match(/new roof|new hvac|new furnace|granite|quartz|central air|finished basement|fenced|deck|remodel\w*|updated|as-is|as is|fixer|TLC/gi)||[])
-              .map(s=>s.toLowerCase()).filter((v,i,a)=>a.indexOf(v)===i).join(", ");
-  const row = {
-    household: localStorage.getItem("bs_house"),
-    address: $("h-addr").value.trim(), listing_url: $("h-url").value.trim(),
-    price: num("h-price"), sqft: num("h-sqft"), beds: num("h-beds"), baths: num("h-baths"),
-    garage: $("h-garage").value, home_type: $("h-type").value, stories: $("h-stories").value,
-    status: $("h-status").value, sale_type: $("h-sale-type").value,
-    listed_date: $("h-listed").value||null,
-    roof_year: num("h-roof"), hvac_year: num("h-hvac"), condition: $("h-cond").value,
-    keywords: kw,
-    lat: CUR&&CUR.addr&&$("h-addr").value&&CUR.addr.includes($("h-addr").value.split(",")[0]) ? CUR.lat : null,
-    lng: CUR&&CUR.addr&&$("h-addr").value&&CUR.addr.includes($("h-addr").value.split(",")[0]) ? CUR.lng : null,
-    school_district: CUR?CUR.school:null, tax_district: CUR?CUR.taxDist:null,
-    district_mismatch: CUR?CUR.mismatch:null,
-    monthly_est: CUR&&CUR.monthlyEst?Math.round(CUR.monthlyEst):null,
-    deal_score: CUR&&CUR.price&&CUR.medComp ? Math.max(0,Math.min(100,Math.round(100-((CUR.price/CUR.medComp)-0.7)/0.8*100))) : null,
+  const kw=($("h-desc").value.match(/new roof|new hvac|new furnace|granite|quartz|central air|finished basement|fenced|deck|remodel\w*|updated|as-is|as is|fixer|TLC/gi)||[])
+    .map(s=>s.toLowerCase()).filter((v,i,a)=>a.indexOf(v)===i).join(", ");
+  const addr=$("h-addr").value.trim();
+  if(!addr){ toast("Address is required"); return; }
+  const linked = !!(CUR && addr && CUR.addr.toUpperCase().includes(addr.split(",")[0].trim().toUpperCase()));
+  const row={
+    household:localStorage.getItem("bs_house"), address:addr, listing_url:$("h-url").value.trim(),
+    price:num("h-price"), sqft:num("h-sqft"), beds:num("h-beds"), baths:num("h-baths"),
+    garage:$("h-garage").value, home_type:$("h-type").value, stories:$("h-stories").value,
+    status:$("h-status").value, sale_type:$("h-sale-type").value, listed_date:$("h-listed").value||null,
+    roof_year:num("h-roof"), hvac_year:num("h-hvac"), condition:$("h-cond").value, keywords:kw,
+    lat: linked?CUR.lat:null, lng: linked?CUR.lng:null,
+    school_district: linked?CUR.school:null, tax_district: linked?CUR.taxDist:null,
+    district_mismatch: linked?CUR.mismatch:null,
+    monthly_est: linked&&CUR.monthlyEst?Math.round(CUR.monthlyEst):null,
+    deal_score: linked&&CUR.price&&CUR.medComp
+      ? Math.max(0,Math.min(100,Math.round(100-((CUR.price/CUR.medComp)-0.7)/0.8*100))) : null,
     is_new: $("h-sale-type").value==="New build"
   };
-  if(!row.address){ toast("Address is required"); return; }
-  const {error} = await SB.from("homes").insert(row);
+  const {error}=await SB.from("homes").insert(row);
   if(error){ toast("Save failed: "+esc(error.message)); return; }
-  toast("Saved to our list ❤️");
-  ["h-url","h-addr","h-price","h-sqft","h-beds","h-baths","h-desc","h-roof","h-hvac","h-listed"].forEach(id=>$(id).value="");
+  toast("Saved to our list ❤️"+(linked?"":" (tip: run Analyze first and it saves with districts, score, and a map pin)"),5000);
+  ["h-url","h-addr","h-price","h-sqft","h-beds","h-baths","h-desc","h-roof","h-hvac","h-listed"].forEach(i=>$(i).value="");
 }
-async function rateHome(id, val){
-  const col = WHO==="her" ? "her_rating" : "his_rating";
-  await SB.from("homes").update({[col]:val}).eq("id",id);
-  loadHomes();
-}
-async function delHome(id){
-  if(!confirm("Remove this home from the list?")) return;
-  await SB.from("homes").delete().eq("id",id);
-  loadHomes();
-}
-function daysOn(h){ return h.listed_date ? Math.max(0,Math.round((Date.now()-new Date(h.listed_date))/864e5)) : null; }
+async function rateHome(id,v){ await SB.from("homes").update({[WHO==="her"?"her_rating":"his_rating"]:v}).eq("id",id); loadHomes(); }
+async function delHome(id){ if(!confirm("Remove this home?")) return; await SB.from("homes").delete().eq("id",id); loadHomes(); }
+const daysOn = h => h.listed_date ? Math.max(0,Math.round((Date.now()-new Date(h.listed_date))/864e5)) : null;
+
 function renderList(){
-  let rows = [...HOMES];
-  if(FILTER==="active") rows = rows.filter(h=>h.status==="Active");
-  if(FILTER==="both-liked") rows = rows.filter(h=>(h.his_rating||0)>=4 && (h.her_rating||0)>=4);
-  if(FILTER==="mismatch") rows = rows.filter(h=>h.district_mismatch);
-  const s = $("list-sort").value;
+  let rows=[...HOMES];
+  if(FILTER==="active") rows=rows.filter(h=>h.status==="Active");
+  if(FILTER==="both-liked") rows=rows.filter(h=>(h.his_rating||0)>=4&&(h.her_rating||0)>=4);
+  if(FILTER==="mismatch") rows=rows.filter(h=>h.district_mismatch);
+  const s=$("list-sort").value;
   rows.sort((a,b)=>{
     if(s==="created_at") return new Date(b.created_at)-new Date(a.created_at);
     if(s==="price") return (a.price||9e9)-(b.price||9e9);
     if(s==="monthly_est") return (a.monthly_est||9e9)-(b.monthly_est||9e9);
-    if(s==="deal_score") return (b.deal_score||-1)-(a.deal_score||-1);
-    if(s==="days") return (daysOn(b)||-1)-(daysOn(a)||-1);
-    if(s==="roof_year"||s==="hvac_year") return (b[s]||0)-(a[s]||0);
-    return 0;
+    if(s==="deal_score") return (b.deal_score??-1)-(a.deal_score??-1);
+    if(s==="days") return (daysOn(b)??-1)-(daysOn(a)??-1);
+    return (b[s]||0)-(a[s]||0);
   });
-  const stars=(v,id,who)=>{ let h=`<span class="rate" title="${who}">`;
-    for(let i=1;i<=5;i++) h+=`<button onclick="rateHome('${id}',${i})" ${WHO!==who?'style="pointer-events:none"':''}>${i<=(v||0)?"★":"☆"}</button>`;
+  const stars=(v,id,who)=>{ let h='<span class="rate">';
+    for(let i=1;i<=5;i++) h+='<button onclick="rateHome(\''+id+'\','+i+')" '+(WHO!==who?'style="pointer-events:none;opacity:.75"':'')+'>'+(i<=(v||0)?"★":"☆")+'</button>';
     return h+"</span>"; };
   $("list-out").innerHTML = rows.length ? rows.map(h=>{
-    const d = daysOn(h);
-    const sc = h.deal_score;
-    const scCls = sc==null?"b-grey":sc>=70?"b-pine":sc>=45?"b-amber":"b-brick";
+    const d=daysOn(h), sc=h.deal_score;
+    const cls = sc==null?"b-grey" : sc>=70?"b-pine" : sc>=45?"b-amber" : "b-brick";
     return `<div class="home-item">
       <div class="top">
         <div>
           <div class="addr">${esc(h.address)}</div>
           <div class="price">${fmt$(h.price)} ${h.monthly_est?`<span class="badge b-pine">${fmt$(h.monthly_est)}/mo true</span>`:""}</div>
-          <div class="meta">${[h.beds&&h.beds+" bd",h.baths&&h.baths+" ba",h.sqft&&h.sqft.toLocaleString()+" sf",h.home_type,h.stories,h.garage].filter(Boolean).join(" · ")}</div>
+          <div class="meta">${[h.beds&&h.beds+" bd",h.baths&&h.baths+" ba",h.sqft&&(+h.sqft).toLocaleString()+" sf",h.home_type,h.stories,h.garage].filter(Boolean).join(" · ")}</div>
           <div class="meta">${[h.status!=="Active"&&h.status,h.sale_type!=="Standard"&&h.sale_type,d!=null&&d+" days listed",h.roof_year&&"roof '"+String(h.roof_year).slice(2),h.hvac_year&&"HVAC '"+String(h.hvac_year).slice(2),h.condition].filter(Boolean).join(" · ")}</div>
-          ${h.school_district?`<div class="meta">🎓 ${esc(h.school_district)} ${h.district_mismatch?'<span class="badge b-amber">MIXED DIST.</span>':""}</div>`:""}
+          ${h.school_district?`<div class="meta">🎓 ${esc(h.school_district)} ${h.district_mismatch?'<span class="badge b-amber">MIXED</span>':""}</div>`:""}
           ${h.keywords?`<div class="meta">🔑 ${esc(h.keywords)}</div>`:""}
         </div>
-        <div style="text-align:right">
-          ${sc!=null?`<div class="score-ring ${scCls}">${sc}</div>`:""}
-        </div>
+        <div style="text-align:right">${sc!=null?`<div class="score-ring ${cls}">${sc}</div>`:""}</div>
       </div>
       <div class="ratings">
         <span class="badge b-pine">Him</span>${stars(h.his_rating,h.id,"him")}
@@ -1016,62 +1144,87 @@ function renderList(){
         <button class="btn-ghost btn-sm" onclick="delHome('${h.id}')">Remove</button>
       </div>
     </div>`;
-  }).join("") : `<div class="card"><p class="note">Nothing saved yet. Analyze a home, run its costs, then add it here — it'll show up on her phone the second you save it.</p></div>`;
-}
-function plotSaved(){
-  initMap();
-  homesLG.clearLayers();
-  let n=0;
-  for(const h of HOMES){
-    if(h.lat&&h.lng){ 
-      L.marker([h.lat,h.lng]).bindPopup(`<b>${esc(h.address)}</b><br>${fmt$(h.price)}${h.listing_url?`<br><a href="${esc(h.listing_url)}" target="_blank">Open listing</a>`:""}`).addTo(homesLG); n++;
-    }
-  }
-  homesLG.addTo(map);
-  $("ly-homes").classList.add("on");
-  toast(n ? n+" saved homes pinned (only ones added via Analyze carry coordinates)." : "No saved homes with map coordinates yet — analyze before saving to pin them.");
+  }).join("") : `<div class="card"><p class="note">Nothing saved yet. Analyze a home, run its costs, then add it — it lands on her phone the second you hit save.</p></div>`;
 }
 
-/* =================================================================
-   GRANTS
-   ================================================================= */
+/* ================= GRANTS ================= */
 function checkGrants(){
-  const his = num("g-his")||0, hers = num("g-hers")||0, both = his+hers;
-  const price = num("g-price")||0, limit = num("g-limit")||0;
-  const line = (label,inc)=>{
-    const ok = limit ? inc<=limit : null;
-    return `<div class="li"><span>${label}</span><span class="num">${fmt$(inc)}/yr ${ok==null?"":ok?'<span class="badge b-pine">UNDER LIMIT</span>':'<span class="badge b-brick">OVER</span>'}</span></div>`;
-  };
-  $("grants-out").innerHTML = `
-  <div class="card">
-    <h2>Income vs OHFA limit</h2>
-    <div class="ledger">
-      ${line("Him alone", his)}
-      ${line("Her alone", hers)}
-      ${line("Applying together", both)}
-    </div>
-    <p class="note">OHFA counts the income of everyone <b>on the loan</b>. If one of you qualifies alone and can carry the mortgage solo, applying single is a legit strategy — the other can still be on the deed. Talk it through with an OHFA-approved lender; there are occupancy and title rules to respect.</p>
-  </div>
+  const his=num("g-his")||0, hers=num("g-hers")||0, both=his+hers;
+  const price=num("g-price")||0, limit=num("g-limit")||0;
+  const line=(l,i)=>{ const ok = limit ? i<=limit : null;
+    return `<div class="li"><span>${l}</span><span class="num">${fmt$(i)}/yr ${ok==null?"":ok?'<span class="badge b-pine">UNDER</span>':'<span class="badge b-brick">OVER</span>'}</span></div>`; };
+  $("grants-out").innerHTML=`
+  <div class="card"><h2>Income vs OHFA limit</h2>
+    <div class="ledger">${line("Him alone",his)}${line("Her alone",hers)}${line("Applying together",both)}</div>
+    <p class="note">OHFA counts the income of everyone <b>on the loan</b>. If one of you qualifies alone and can carry the payment solo, applying single is a legitimate strategy — the other can still be on the deed. There are occupancy and title rules, so run it past an OHFA-approved lender first.</p></div>
   <div class="grant"><h3>OHFA YourChoice! Down Payment Assistance</h3>
-    <p class="note">2.5% or 5% of the purchase price toward down payment + closing costs. On ${fmt$(price)} that's <b class="money">${fmt$(price*0.025)}</b> or <b class="money">${fmt$(price*0.05)}</b>. Forgiven after 7 years in the home. Must use an OHFA loan; income &amp; price limits apply.</p>
-    <a href="https://www.ohiohome.org/homebuyers/downpayment.aspx" target="_blank" rel="noopener">ohiohome.org → down payment</a></div>
+    <p class="note">2.5% or 5% of the price toward down payment and closing costs. On ${fmt$(price)} that's <b class="money">${fmt$(price*0.025)}</b> or <b class="money">${fmt$(price*0.05)}</b>. Forgiven after 7 years in the home.</p>
+    <a href="https://www.ohiohome.org/homebuyers/downpayment.aspx" target="_blank" rel="noopener">ohiohome.org → down payment ↗</a></div>
   <div class="grant"><h3>OHFA Grants for Grads</h3>
-    <p class="note">Same 2.5–5% assistance with a discounted rate if either of you finished a degree (associate's and up) in the last 48 months. Forgiven after 5 years if you stay in Ohio.</p>
-    <a href="https://www.ohiohome.org/homebuyers/gradgrants.aspx" target="_blank" rel="noopener">ohiohome.org → grants for grads</a></div>
+    <p class="note">Same 2.5–5% assistance plus a discounted rate if either of you finished a degree (associate's or higher) in the last 48 months. Forgiven after 5 years if you stay in Ohio.</p>
+    <a href="https://www.ohiohome.org/homebuyers/gradgrants.aspx" target="_blank" rel="noopener">ohiohome.org → grants for grads ↗</a></div>
   <div class="grant"><h3>OHFA Ohio Heroes</h3>
-    <p class="note">Rate discount for public-sector and service workers — teachers, healthcare, first responders, military, and <b>government employees</b>. A county annexation job may well count. Stack with YourChoice DPA.</p>
-    <a href="https://www.ohiohome.org/homebuyers/ohioheroes.aspx" target="_blank" rel="noopener">ohiohome.org → ohio heroes</a></div>
-  <div class="grant"><h3>Communities First (Port of Greater Cincinnati / statewide)</h3>
-    <p class="note">Grant of 3–5% that does <b>not</b> require repayment, usable with FHA or conventional, often friendlier limits than OHFA. Worth quoting side-by-side.</p>
-    <a href="https://www.cincinnatiport.org/communities-first-ohio/" target="_blank" rel="noopener">communities first ohio</a></div>
-  <div class="grant"><h3>Franklin County / Columbus city programs</h3>
-    <p class="note">The county land bank and the City of Columbus run rotating down-payment and rehab programs (e.g., American Dream DPA). These change with funding cycles — check both sites when you're 60 days out.</p>
-    <a href="https://www.columbus.gov/Services/Neighborhoods/Housing" target="_blank" rel="noopener">columbus.gov housing</a></div>
-  <p class="note">⚠️ Program terms, rates, and limits above are descriptive and move every year. Confirm current numbers with an OHFA-approved lender before building them into your budget.</p>`;
+    <p class="note">Rate discount for teachers, healthcare, first responders, military, and <b>government employees</b> — a county role may well qualify. Stacks with YourChoice.</p>
+    <a href="https://www.ohiohome.org/homebuyers/ohioheroes.aspx" target="_blank" rel="noopener">ohiohome.org → ohio heroes ↗</a></div>
+  <div class="grant"><h3>Communities First Ohio</h3>
+    <p class="note">3–5% grant with <b>no repayment</b>, usable with FHA or conventional, often looser limits than OHFA. Worth quoting side by side.</p>
+    <a href="https://www.cincinnatiport.org/communities-first-ohio/" target="_blank" rel="noopener">communities first ohio ↗</a></div>
+  <div class="grant"><h3>Franklin County &amp; Columbus city programs</h3>
+    <p class="note">The county land bank and City of Columbus run rotating down-payment and rehab programs. Funding cycles change — check both when you're ~60 days out. Suburbs occasionally run their own too; ask your lender what's live.</p>
+    <a href="https://www.columbus.gov/Services/Neighborhoods/Housing" target="_blank" rel="noopener">columbus.gov housing ↗</a></div>
+  <p class="note">⚠️ Terms and limits above are descriptive and change annually. Confirm current numbers with an OHFA-approved lender before budgeting around them.</p>`;
 }
+
+/* ================= district / jurisdiction reference ================= */
+let REF="splits";
+function renderRef(){
+  const q=($("ref-q").value||"").trim().toLowerCase();
+  const hit = s => !q || String(s).toLowerCase().includes(q);
+  let html="";
+
+  if(REF==="places" || REF==="twps"){
+    const groups = REF==="places"
+      ? [["Cities",JURIS.cities,"b-pine"],["Villages",JURIS.villages,"b-plum"]]
+      : [["Civil townships",JURIS.townships,"b-grey"],["Unincorporated communities (CDPs)",JURIS.cdps,"b-amber"]];
+    for(const [title,list,cls] of groups){
+      const rows=list.filter(hit);
+      if(!rows.length) continue;
+      html+=`<h3 style="margin-top:12px">${title} <span class="num">(${rows.length})</span></h3>
+        <div class="chips">${rows.map(n=>`<span class="badge ${cls}">${esc(n)}</span>`).join("")}</div>`;
+    }
+    if(!html) html=`<p class="note">Nothing matches "${esc(q)}".</p>`;
+    $("ref-out").innerHTML=html;
+    return;
+  }
+
+  const codes = Object.entries(TAX_DISTRICTS)
+    .filter(([c]) => REF==="codes" || districtRisk(c).level===2)
+    .filter(([c,d]) => hit(c) || hit(d[0]) || hit(d[1]));
+  if(!codes.length){ $("ref-out").innerHTML=`<p class="note">Nothing matches "${esc(q)}".</p>`; return; }
+
+  html = `<div class="ledger" style="margin-top:8px">` + codes.map(([c,d])=>{
+    const r = districtRisk(c);
+    const tag = r.level===2 ? `<span class="badge b-amber">${esc(r.label)}</span>`
+              : r.level===1 ? `<span class="badge b-grey">TWP</span>` : "";
+    return `<div class="li" ${r.why?`title="${esc(r.why)}"`:""}><span><b class="num">${esc(c)}</b> · ${esc(d[0])}</span>
+      <span style="text-align:right">${esc(d[1])} ${tag}</span></div>`;
+  }).join("") + `</div>`;
+
+  if(REF==="splits"){
+    html += `<p class="note">These are the ones that actually catch people out — an incorporated address paying into someone else's school district. <b>054</b>: a Hilliard address, Dublin schools. <b>125</b> and <b>145</b>: Columbus city, Hilliard schools. <b>075/076</b>: Upper Arlington, Dublin schools. <b>061/067</b>: Reynoldsburg addresses in Licking Heights — a district based in another county entirely.</p>
+      <p class="note">Townships aren't listed here on purpose. Blendon on Westerville schools, Clinton on Columbus schools — that's just how townships work, and flagging all of them would bury the codes that matter. Switch to <b>All codes</b> to see them marked TWP.</p>`;
+  }
+  html += `<p class="note">Reference table, not gospel — annexations mint new codes and shift boundaries. When BurbScout analyzes a real parcel, the county's live record overrides this list and it'll tell you if the two disagree.</p>`;
+  $("ref-out").innerHTML=html;
+}
+document.querySelectorAll("#ref-tabs .chip").forEach(c=>c.onclick=()=>{
+  document.querySelectorAll("#ref-tabs .chip").forEach(x=>x.classList.remove("on"));
+  c.classList.add("on"); REF=c.dataset.r; renderRef();
+});
 
 /* boot */
 initList();
+renderRef();
 </script>
 </body>
 </html>
