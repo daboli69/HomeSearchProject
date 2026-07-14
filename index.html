@@ -658,7 +658,7 @@ async function neighbors(lat,lng){
     geometry:env, geometryType:"esriGeometryEnvelope", inSR:"4326",
     spatialRel:"esriSpatialRelIntersects",
     outFields:"SITEADDRESS,SALEPRICE,SALEDATE,TOTVALUEBASE,TOTCNTTXOD,OWNEROCCUPIED,RENTAL,RESFLRAREA,RESYRBLT",
-    returnGeometry:"false", resultRecordCount:"2000"
+    returnGeometry:"false", resultRecordCount:"1200"
   });
   return f.map(x=>x.attributes);
 }
@@ -877,13 +877,13 @@ let CUR = null;
 /* ============================================================
    LOOKUP
    ============================================================ */
-const STEPS = ["Finding the address","Reading the county's record","Checking nearby sales","Scanning the neighborhood"];
+const STEPS = ["Finding the address","Reading the county's record"];
 function progress(i, addr){
   $("result").innerHTML = `<div class="card"><h2>${esc(addr)}</h2>` +
     STEPS.map((s,n)=>`<div class="step ${n<i?"done":""}">
       <div class="n">${n<i?"✓":(n===i?'<span class="spin"></span>':n+1)}</div>
       <div class="t" style="font-weight:${n===i?600:400}">${s}</div></div>`).join("") +
-    `<p class="sub" style="margin-top:8px">Checking four public data sources so you don't have to.</p></div>`;
+    `<p class="sub" style="margin-top:8px">Reading the county's records. The neighborhood scan runs after, so you won't wait for it.</p></div>`;
 }
 async function lookup(){
   const addr = $("addr").value.trim();
@@ -910,7 +910,7 @@ async function lookup(){
 
 async function analyze(lat, lng, label){
   progress(1, label);
-  let a=null;
+  let a=null, nbP = neighbors(lat,lng).catch(()=>[]);   /* fire in parallel, don't wait twice */
   try{ a = await parcelAt(lat,lng); }
   catch(e){
     $("result").innerHTML = `<div class="card"><div class="note n-r"><b>County records didn't answer.</b><br>
@@ -925,8 +925,7 @@ async function analyze(lat, lng, label){
     return;
   }
 
-  progress(2, label);
-  let nb=[]; try{ nb = await neighbors(lat,lng); }catch(e){}
+  const nb = await nbP;
 
   /* ---- county facts. All names verified against the layer schema. ---- */
   const price   = num("price");
@@ -975,53 +974,77 @@ async function analyze(lat, lng, label){
     if(gap>1.08 && (after-now)>25) reassess = {gap, now, after, likely:(after-now)*0.7};
   }
 
-  progress(3, label);
-  const ctx = await context(lat,lng);
-  const work = ls("work",{});
-  const ct = work.travis ? await drive(lat,lng,work.travis) : null;
-  const ck = work.kaylin ? await drive(lat,lng,work.kaylin) : null;
-
   CUR = {addr:a.SITEADDRESS || label, lat, lng, url:LAST_URL, pid:a.PARCELID,
     price, sqft, yr, beds, baths, appr, taxBill, taxRate, code, muni, school, flood,
     sale, saleDt, taxSrc, medComp, ownPct, allIn:c?Math.round(c.allIn):null, monthly_est:c?Math.round(c.piti):null,
     util_est:c?Math.round(c.u.total):null, price_ratio:(price&&medComp)?price/medComp:null,
-    own_pct:ownPct, sketch_n:ctx?ctx.sketch:null, up_n:ctx?ctx.up:null, lgbtq:ctx?ctx.lgbtq:null,
-    amenity_n:ctx?(ctx.grocery*3+ctx.food+ctx.parks*2):null, water_n:ctx?ctx.water:null,
-    commute_travis:ct, commute_kaylin:ck, school_district:school,
+    own_pct:ownPct, sketch_n:null, up_n:null, lgbtq:null, amenity_n:null, water_n:null,
+    commute_travis:null, commute_kaylin:null, school_district:school,
     reassess_bump: reassess?Math.round(reassess.likely):null,
     mixed: districtRisk(code, muni, school)===2};
 
   pin(lat, lng, CUR.addr, c?Math.round(c.allIn):null);   /* auto-pin, stays on the map */
-  render(a, c, reassess, topComps, ctx, ct, ck);
+  render(a, c, reassess, topComps);          /* <- shows NOW. Everything above is 2 fast county calls. */
+  enrich(lat, lng);                           /* <- neighbourhood + commute stream in after */
+}
+
+/* The slow stuff. Runs after the page is already useful, patches itself in.
+   Cached per ~110m grid square, so re-checking a street is instant. */
+async function enrich(lat, lng){
+  const token = CUR;                           /* if the user looks up another home, abandon this */
+  const work = ls("work",{});
+  const [ctx, ct, ck] = await Promise.all([
+    context(lat,lng),
+    work.travis ? drive(lat,lng,work.travis) : Promise.resolve(null),
+    work.kaylin ? drive(lat,lng,work.kaylin) : Promise.resolve(null)
+  ]);
+  if(CUR !== token) return;                    /* stale — a newer lookup won */
+
+  Object.assign(CUR, {
+    sketch_n: ctx?ctx.sketch:null, up_n: ctx?ctx.up:null, lgbtq: ctx?ctx.lgbtq:null,
+    amenity_n: ctx?(ctx.grocery*3+ctx.food+ctx.parks*2):null, water_n: ctx?ctx.water:null,
+    commute_travis: ct, commute_kaylin: ck
+  });
+
+  const slot = $("nbhd");
+  if(slot) slot.innerHTML = nbhdCard(ctx, ct, ck);
+  const fc = $("fitcard");
+  if(fc) fc.innerHTML = fitCard();             /* fit score now includes the neighbourhood */
 }
 
 /* ============================================================
    NEIGHBOURHOOD CONTEXT — one Overpass call
    ============================================================ */
 async function context(lat,lng){
-  const q = `[out:json][timeout:25];
+  /* Cache per ~110m grid square for a week. Re-checking homes on the same
+     street — which is exactly what you do — becomes instant. */
+  const key = `ctx:${lat.toFixed(3)},${lng.toFixed(3)}`;
+  const hit = ls(key, null);
+  if(hit && (Date.now()-hit.t) < 7*864e5) return hit.c;
+
+  /* One lean query. The old one had 15 separate clauses at a 1-mile radius
+     and asked for 700 results — that is what took forever. This asks for
+     less, over a smaller area, with a shorter timeout. */
+  const A = `(around:1200,${lat},${lng})`;
+  const q = `[out:json][timeout:15];
 (
- nwr["shop"~"supermarket|grocery"](around:1600,${lat},${lng});
- nwr["leisure"="park"](around:1600,${lat},${lng});
- nwr["amenity"~"restaurant|cafe|bar|fast_food"](around:1600,${lat},${lng});
- nwr["natural"="water"](around:2400,${lat},${lng});
- nwr["shop"~"pawnbroker|money_lender|variety_store|alcohol|tobacco|laundry|tyres|car_repair"](around:1600,${lat},${lng});
- nwr["shop"="mobile_phone"]["name"~"boost|cricket|metro|straight ?talk|simple mobile|prepaid",i](around:1600,${lat},${lng});
- nwr["office"="bail_bond"](around:1600,${lat},${lng});
- nwr["healthcare"="addiction"](around:1600,${lat},${lng});
- nwr["name"~"payday|check ?cash|title ?max|plasma|cashland|bail bond|rent-?a-?center|aaron's|dollar general|family dollar",i](around:1600,${lat},${lng});
- nwr["craft"~"brewery|distillery"](around:1600,${lat},${lng});
- nwr["shop"~"coffee|records|art|books|bicycle"](around:1600,${lat},${lng});
- nwr["lgbtq"](around:1600,${lat},${lng});
- nwr["gay"](around:1600,${lat},${lng});
- nwr["name"~"pride|rainbow|stonewall|union cafe|axis|boscoe|slammers|club diversity",i](around:1600,${lat},${lng});
+ nwr["shop"~"^(supermarket|grocery|convenience|pawnbroker|money_lender|variety_store|alcohol|tobacco|laundry|tyres|car_repair|coffee|books|bicycle|records|art|beauty)$"]${A};
+ nwr["amenity"~"^(restaurant|cafe|bar|fast_food)$"]${A};
+ nwr["leisure"="park"]${A};
+ nwr["craft"~"brewery|distillery"]${A};
+ nwr["office"="bail_bond"]${A};
+ nwr["healthcare"="addiction"]${A};
+ nwr["shop"="mobile_phone"]["name"~"boost|cricket|metro|straight ?talk|simple mobile|prepaid",i]${A};
+ nwr["lgbtq"]${A};
+ nwr["name"~"payday|check ?cash|title ?max|plasma|cashland|bail bond|rent-?a-?center|aaron's|dollar general|family dollar|pride|rainbow|stonewall|union cafe|axis|boscoe|slammers|club diversity",i]${A};
+ nwr["natural"="water"](around:1500,${lat},${lng});
 );
-out center 700;`;
-  let j; try{ j = await overpass(q); }catch(e){ return null; }
+out center 250;`;
+  let j2; try{ j2 = await overpass(q); }catch(e){ return null; }
   const c = {grocery:0,parks:0,food:0,water:0,sketch:0,up:0,lgbtq:0};
-  for(const el of j.elements||[]){
+  for(const el of j2.elements||[]){
     const t = el.tags||{}, n = t.name||"";
-    if(/supermarket|grocery/.test(t.shop||"")) c.grocery++;
+    if(/supermarket|grocery|convenience/.test(t.shop||"")) c.grocery++;
     else if(t.leisure==="park") c.parks++;
     else if(/restaurant|cafe|bar|fast_food/.test(t.amenity||"")) c.food++;
     else if(t.natural==="water") c.water++;
@@ -1034,11 +1057,13 @@ out center 700;`;
     if(lg){ c.lgbtq++; c.up += 4; }        /* strongest leading indicator in Columbus */
     else if(/brewery|distillery/.test(t.craft||"") || /coffee|records|art|books|bicycle/.test(t.shop||"")) c.up++;
   }
+  lset(key, {t:Date.now(), c});
   return c;
 }
 async function drive(lat,lng,w){
   try{
-    const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${lng},${lat};${w.lng},${w.lat}?overview=false`);
+    const ac = new AbortController(); setTimeout(()=>ac.abort(), 8000);
+    const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${lng},${lat};${w.lng},${w.lat}?overview=false`, {signal:ac.signal});
     const j = await r.json();
     return j.routes?.[0] ? Math.round(j.routes[0].duration/60) : null;
   }catch(e){ return null; }
@@ -1047,7 +1072,48 @@ async function drive(lat,lng,w){
 /* ============================================================
    RENDER
    ============================================================ */
-function render(a, c, reassess, comps, ctx, ct, ck){
+function fitCard(){
+  const f = fit(CUR), parts = fitParts(CUR);
+  if(f==null) return "";
+  const pending = CUR.sketch_n==null;
+  return `<div class="card"><h2>Fit for us</h2>
+    <div style="display:flex;gap:14px;align-items:center;margin-top:8px">
+      <div class="score ${fitTag(f)}">${f}</div>
+      <div style="flex:1">${Object.entries(parts).sort((x,y)=>y[1]-x[1]).slice(0,4).map(([k,v])=>
+        `<div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between">
+          <span>${WKEY[k]}</span><span class="mono">${Math.round(v)}</span></div>
+         <div class="bar"><i style="width:${Math.round(v)}%"></i></div>`).join("")}</div>
+    </div>
+    <p class="sub" style="margin-top:6px">${pending
+      ? "Based on price and budget so far — it'll adjust once the neighbourhood scan lands."
+      : "Weighted by what you two said matters. Change it on the Money tab and every home rescores."}</p></div>`;
+}
+function nbhdCard(ctx, ct, ck){
+  if(!ctx) return `<div class="card"><div class="note n-a"><b>Neighbourhood scan didn't come back.</b>
+    The free map service was busy. Everything else on this page is county data and is correct.
+    <button class="b2 bs" style="margin-top:8px" onclick="$('nbhd').innerHTML='<div class=&quot;card&quot;><p class=&quot;sub&quot;><span class=&quot;spin&quot;></span> Scanning…</p></div>';enrich(${CUR.lat},${CUR.lng})">Try the scan again</button></div></div>`;
+  return `<div class="card"><h2>The neighbourhood</h2>
+    <div class="facts">
+      <div class="fact"><div class="l">Owner-occupied</div><div class="v">${CUR.ownPct!=null?CUR.ownPct+"%":"—"}</div></div>
+      <div class="fact"><div class="l">Groceries</div><div class="v">${ctx.grocery}</div></div>
+      <div class="fact"><div class="l">Places to eat</div><div class="v">${ctx.food}</div></div>
+      <div class="fact"><div class="l">Parks</div><div class="v">${ctx.parks}</div></div>
+      <div class="fact"><div class="l">🚩 Sketch signals</div><div class="v">${ctx.sketch}</div></div>
+      <div class="fact"><div class="l">🏳️‍🌈 LGBTQ+ venues</div><div class="v">${ctx.lgbtq}</div></div>
+    </div>
+    ${ctx.lgbtq?`<div class="note n-b"><b>${ctx.lgbtq} LGBTQ+ venue${ctx.lgbtq>1?"s":""} within a mile.</b>
+      In Columbus this has been the leading indicator — it ran years ahead of the price curve in the Short North,
+      Italian Village and Olde Towne East.</div>`:""}
+    ${ctx.sketch>=8?`<div class="note n-a">Dense cluster of hard sketch signals (payday lenders, pawn, bail bonds,
+      liquor/tobacco). Go look in person, at night, before you get attached.</div>`:""}
+    ${CUR.ownPct!=null&&CUR.ownPct<50?`<div class="note n-a">Under half the homes around here are owner-occupied —
+      a heavily rental street. Not automatically bad, but it affects how the block is maintained and how it resells.</div>`:""}
+    ${(ct||ck)?`<div class="led" style="margin-top:8px">
+      ${ct?`<div class="li"><span class="k">Travis's commute</span><span class="v">${ct} min</span></div>`:""}
+      ${ck?`<div class="li"><span class="k">Kaylin's commute</span><span class="v">${ck} min</span></div>`:""}</div>`:""}
+  </div>`;
+}
+function render(a, c, reassess, comps){
   const f = fit(CUR);
   const hz = hazards(CUR.yr);
   const parts = fitParts(CUR);
@@ -1096,18 +1162,7 @@ function render(a, c, reassess, comps, ctx, ct, ck){
   }
   h += `</div>`;
 
-  /* fit */
-  if(f!=null){
-    h += `<div class="card"><h2>Fit for us</h2>
-      <div style="display:flex;gap:14px;align-items:center;margin-top:8px">
-        <div class="score ${fitTag(f)}">${f}</div>
-        <div style="flex:1">${Object.entries(parts).sort((x,y)=>y[1]-x[1]).slice(0,4).map(([k,v])=>
-          `<div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between">
-            <span>${WKEY[k]}</span><span class="mono">${Math.round(v)}</span></div>
-           <div class="bar"><i style="width:${Math.round(v)}%"></i></div>`).join("")}</div>
-      </div>
-      <p class="sub" style="margin-top:6px">Weighted by what you two said matters. Change it on the Money tab and every home rescores.</p></div>`;
-  }
+  h += `<div id="fitcard">${fitCard()}</div>`;
 
   /* school district */
   const risk = districtRisk(CUR.code, CUR.muni, CUR.school);
@@ -1157,29 +1212,10 @@ function render(a, c, reassess, comps, ctx, ct, ck){
       ${CUR.medComp?`Median nearby: <b>${$$(CUR.medComp)}</b>.`:""}</p></div>`;
   }
 
-  /* neighbourhood */
-  if(ctx){
-    h += `<div class="card"><h2>The neighbourhood</h2>
-      <div class="facts">
-        <div class="fact"><div class="l">Owner-occupied</div><div class="v">${CUR.ownPct!=null?CUR.ownPct+"%":"—"}</div></div>
-        <div class="fact"><div class="l">Groceries</div><div class="v">${ctx.grocery}</div></div>
-        <div class="fact"><div class="l">Places to eat</div><div class="v">${ctx.food}</div></div>
-        <div class="fact"><div class="l">Parks</div><div class="v">${ctx.parks}</div></div>
-        <div class="fact"><div class="l">🚩 Sketch signals</div><div class="v">${ctx.sketch}</div></div>
-        <div class="fact"><div class="l">🏳️‍🌈 LGBTQ+ venues</div><div class="v">${ctx.lgbtq}</div></div>
-      </div>
-      ${ctx.lgbtq?`<div class="note n-b"><b>${ctx.lgbtq} LGBTQ+ venue${ctx.lgbtq>1?"s":""} within a mile.</b>
-        In Columbus this has been the leading indicator — it ran years ahead of the price curve in the Short North,
-        Italian Village and Olde Towne East. Where it appears next is where you want to buy early.</div>`:""}
-      ${ctx.sketch>=8?`<div class="note n-a">Dense cluster of hard sketch signals (payday lenders, pawn, bail bonds,
-        liquor/tobacco). Go look in person, at night, before you get attached.</div>`:""}
-      ${CUR.ownPct!=null&&CUR.ownPct<50?`<div class="note n-a">Under half the homes around here are owner-occupied —
-        a heavily rental street. Not automatically bad, but it affects how the block is maintained and how it resells.</div>`:""}
-      ${(ct||ck)?`<div class="led" style="margin-top:8px">
-        ${ct?`<div class="li"><span class="k">Travis's commute</span><span class="v">${ct} min</span></div>`:""}
-        ${ck?`<div class="li"><span class="k">Kaylin's commute</span><span class="v">${ck} min</span></div>`:""}</div>`:""}
-    </div>`;
-  }
+  /* neighbourhood — filled in by enrich() a moment later */
+  h += `<div id="nbhd"><div class="card"><h2>The neighbourhood</h2>
+    <p class="sub"><span class="spin"></span> Scanning within a mile — groceries, parks, sketch signals, commute.
+    Everything above is already final; this just fills in.</p></div></div>`;
 
   /* hazards */
   if(hz.length){
