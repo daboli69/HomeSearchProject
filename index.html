@@ -156,6 +156,24 @@ nav button.on{color:#fff}
   box-shadow:0 4px 16px rgba(15,123,90,.35);display:flex;align-items:center;gap:7px}
 
 #map{height:56vh;min-height:320px;border-radius:var(--r);border:1px solid var(--line)}
+.photo{width:100%;aspect-ratio:16/9;object-fit:cover;background:#DCE1E6;display:block}
+.hero .photo{border-radius:10px;margin:-4px 0 12px}
+.photowrap{position:relative;border-radius:10px;overflow:hidden;margin:-4px 0 12px;background:#DCE1E6}
+.photowrap .badge{position:absolute;left:8px;top:8px;background:rgba(27,42,56,.82);color:#fff;
+  font-size:11px;font-weight:600;border-radius:6px;padding:4px 8px;backdrop-filter:blur(2px)}
+.photowrap .price{position:absolute;left:8px;bottom:8px;background:rgba(27,42,56,.86);color:#fff;
+  font-family:var(--m);font-weight:700;font-size:16px;border-radius:8px;padding:5px 10px}
+.photowrap .heartbtn{position:absolute;right:8px;bottom:8px;background:rgba(255,255,255,.92);
+  border-radius:50%;width:38px;height:38px;font-size:19px;display:flex;align-items:center;justify-content:center;padding:0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:380px){.grid{grid-template-columns:1fr}}
+.pcard{background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.pcard .photo{aspect-ratio:4/3}
+.pcard .body2{padding:10px 11px}
+.pcard .a{font-weight:600;font-size:13.5px;line-height:1.25}
+.pcard .c{font-family:var(--m);font-weight:700;font-size:15px;margin-top:2px}
+.pcard .m{font-size:11.5px;color:var(--ink2);margin-top:2px}
+.imglink{display:inline-flex;gap:6px;align-items:center}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--green);
   border-radius:50%;animation:s .8s linear infinite;vertical-align:-2px}
 @keyframes s{to{transform:rotate(360deg)}}
@@ -221,8 +239,8 @@ a{color:var(--green);font-weight:600}
     <button class="b1" onclick="createList()">Start our list</button>
     <p class="sub" style="text-align:center;margin:10px 0 6px">— or —</p>
     <label for="joincode">Join with a code
-      <span class="hint">Paste the code your partner sent you. That's the whole setup.</span></label>
-    <input id="joincode" placeholder="paste code here" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <span class="hint">Paste the code your partner sent. That's the whole setup — no accounts.</span></label>
+    <input id="joincode" placeholder="paste your partner's code" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
     <button class="b2" style="width:100%;margin-top:8px" onclick="joinList($('joincode').value)">Join</button>
   </div>
 
@@ -238,6 +256,10 @@ a{color:var(--green);font-weight:600}
       <p class="sub" id="synced" style="margin-top:8px"></p>
     </div>
     <div class="card">
+      <div class="pills" style="margin-bottom:8px">
+        <button class="pill" id="v-grid" onclick="lset('listview','grid');drawList();syncViewPills()">▦ Photos</button>
+        <button class="pill" id="v-cards" onclick="lset('listview','cards');drawList();syncViewPills()">☰ Details</button>
+      </div>
       <div class="row">
         <select id="sort" onchange="localStorage.setItem('sort',this.value);drawList()">
           <option value="fit">Best fit for us</option>
@@ -1076,6 +1098,21 @@ async function drive(lat,lng,w){
 }
 
 /* ============================================================
+   IMAGERY — Esri World Imagery aerial (no key, no billing, no CORS).
+   Gives every home a real photo of the actual parcel: roof, lot, driveway,
+   pool, trees, the street. Plus keyless Google Maps links for street view.
+   ============================================================ */
+function aerial(lat, lng, w=640, h=360){
+  if(!lat||!lng) return "";
+  const padLng = 0.0016, padLat = padLng * 0.62;   /* ~square ground area at Columbus latitude */
+  const bbox = [lng-padLng, lat-padLat, lng+padLng, lat+padLat].join(",");
+  return "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export"
+       + "?bbox="+bbox+"&bboxSR=4326&imageSR=3857&size="+w+","+h+"&format=jpg&f=image";
+}
+const streetViewLink = (lat,lng)=>`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+const mapLink        = (lat,lng)=>`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+
+/* ============================================================
    RENDER
    ============================================================ */
 function fitCard(){
@@ -1126,43 +1163,64 @@ function render(a, c, reassess, comps){
   const b = budget();
   const over = (b && c) ? c.allIn - b : null;
 
+  const ppsf = (CUR.price && CUR.sqft) ? Math.round(CUR.price/CUR.sqft) : null;
+  const specs = [CUR.beds&&CUR.beds+" bd", CUR.baths&&CUR.baths+" ba",
+        CUR.sqft&&CUR.sqft.toLocaleString()+" sqft", CUR.yr&&CUR.yr,
+        a.RESSTRTYP, a.BASEMENT && !/^(none|no|n)$/i.test(String(a.BASEMENT).trim()) && a.BASEMENT+" bsmt"].filter(Boolean).join(" · ");
+
   let h = `<div class="card hero">
+    <div class="photowrap">
+      <img class="photo" loading="lazy" src="${aerial(CUR.lat,CUR.lng)}"
+        onerror="this.style.display='none'" alt="Aerial view">
+      <span class="badge">🛰️ Aerial · the actual lot</span>
+      ${CUR.price?`<span class="price">${$$(CUR.price)}</span>`:""}
+      <button class="heartbtn" onclick="save()">🤍</button>
+    </div>
     <h2>${esc(CUR.addr)}</h2>
-    <p class="sub">${[CUR.beds&&CUR.beds+" bed", CUR.baths&&CUR.baths+" bath",
-        CUR.sqft&&CUR.sqft.toLocaleString()+" sq ft", CUR.yr&&"built "+CUR.yr,
-        a.RESSTRTYP, a.BASEMENT && !/^(none|no|n)$/i.test(String(a.BASEMENT).trim()) && a.BASEMENT+" basement"].filter(Boolean).join(" · ")}</p>
-    <p class="sub" style="font-size:11.5px;margin-top:2px">Every one of those came from the county's own record. Nothing typed in.</p>`;
+    <p class="sub">${specs}${ppsf?` · <b>$${ppsf}/sqft</b>`:""}</p>
+    <p class="sub" style="font-size:11.5px;margin-top:2px">Beds, baths, size, year — from the county's own record. Nothing typed in.</p>
+    <div class="pills" style="margin-top:10px">
+      <a class="pill imglink" href="${streetViewLink(CUR.lat,CUR.lng)}" target="_blank" rel="noopener">🏠 Street View</a>
+      <a class="pill imglink" href="${mapLink(CUR.lat,CUR.lng)}" target="_blank" rel="noopener">🗺️ Map</a>
+      ${CUR.url?`<a class="pill imglink" href="${esc(CUR.url)}" target="_blank" rel="noopener">📄 Listing photos</a>`:""}
+    </div>`;
 
   if(c){
-    h += `<div class="led" style="margin-top:14px">
+    /* headline first — the one number that matters, big */
+    h += `<div class="led" style="margin-top:12px">
+      <div class="li big"><span class="k">Every month, all in<small>Mortgage + tax + insurance + utilities + repairs</small></span><span class="v">${$$(c.allIn)}</span></div>
+    </div>`;
+    if(over!=null){
+      h += over>0
+        ? `<div class="note n-r"><b>Over our budget by ${$$(over)}/month.</b> That's the honest number, utilities and repairs counted.</div>`
+        : `<div class="note n-g"><b>Inside our budget</b> — ${$$(-over)}/month to spare, utilities and a repair fund already included.</div>`;
+    }
+    /* the full breakdown is one tap away, not in your face */
+    h += `<details style="margin-top:10px"><summary>See the full monthly breakdown<span class="cap">Every line that hits the bank account</span></summary>
+      <div class="body"><div class="led">
       <div class="li"><span class="k">Mortgage<small>Principal + interest</small></span><span class="v">${$$(c.pi)}</span></div>
       <div class="li"><span class="k">Property tax<small>${esc(CUR.taxRate.toFixed(2))}% — from ${esc(CUR.taxSrc||"county records")}</small></span><span class="v">${$$(c.tax)}</span></div>
       <div class="li"><span class="k">Home insurance</span><span class="v">${$$(c.ins)}</span></div>
-      ${c.mi?`<div class="li"><span class="k">Mortgage insurance<small>Because we're under 20% down</small></span><span class="v">${$$(c.mi)}</span></div>`:""}
+      ${c.mi?`<div class="li"><span class="k">Mortgage insurance<small>Under 20% down</small></span><span class="v">${$$(c.mi)}</span></div>`:""}
       <div class="li"><span class="k">⚡ Electric</span><span class="v">${$$(c.u.elec)}</span></div>
       <div class="li"><span class="k">🔥 Gas</span><span class="v">${$$(c.u.gas)}</span></div>
       <div class="li"><span class="k">💧 Water &amp; sewer</span><span class="v">${$$(c.u.water)}</span></div>
       ${c.u.trash?`<div class="li"><span class="k">🗑️ Trash</span><span class="v">${$$(c.u.trash)}</span></div>`:""}
       <div class="li"><span class="k">🌐 Internet</span><span class="v">${$$(c.u.net)}</span></div>
       <div class="li"><span class="k">🔧 Repairs fund<small>1% of the house per year</small></span><span class="v">${$$(c.repair)}</span></div>
-      <div class="li big"><span class="k">Every month, all in</span><span class="v">${$$(c.allIn)}</span></div>
+      <div class="li big"><span class="k">All in</span><span class="v">${$$(c.allIn)}</span></div>
     </div>
-    <p class="sub" style="margin-top:8px">The listing says ${$$(CUR.price)}. ${esc(c.u.why)}</p>`;
-    if(over!=null){
-      h += over>0
-        ? `<div class="note n-r"><b>Over our budget by ${$$(over)}/month.</b> Not close — and that's the honest number, with utilities and repairs counted.</div>`
-        : `<div class="note n-g"><b>Inside our budget</b> with ${$$(-over)}/month to spare — utilities and a repair fund already included.</div>`;
-    }
-    h += `<div class="facts">
+    <div class="facts">
       <div class="fact"><div class="l">Cash to close</div><div class="v">${$$(c.cash)}</div></div>
       <div class="fact"><div class="l">Down payment</div><div class="v">${$$(c.down)}</div></div>
       ${CUR.sale && CUR.sale>1000 ? `<div class="fact"><div class="l">Seller paid</div><div class="v">${$$(CUR.sale)}</div></div>
       <div class="fact"><div class="l">When</div><div class="v">${CUR.saleDt?CUR.saleDt.getFullYear():"—"}</div></div>`:""}
     </div>
-    ${CUR.sale && CUR.sale>1000 && CUR.price && CUR.price > CUR.sale*1.5 && CUR.saleDt && (Date.now()-CUR.saleDt.getTime()) < 4*365.25*864e5
-      ? `<div class="note n-a"><b>Bought for ${$$(CUR.sale)} in ${CUR.saleDt.getFullYear()}, asking ${$$(CUR.price)}.</b>
-         A big markup on a recent purchase usually means a flip — pretty finishes over old bones. Ask exactly what was
-         replaced (roof, furnace, wiring, plumbing) and get receipts, not adjectives.</div>` : ""}`;
+    <p class="sub" style="margin-top:8px">Listing price ${$$(CUR.price)}. ${esc(c.u.why)}</p></div></details>`;
+    if(CUR.sale && CUR.sale>1000 && CUR.price && CUR.price > CUR.sale*1.5 && CUR.saleDt && (Date.now()-CUR.saleDt.getTime()) < 4*365.25*864e5)
+      h += `<div class="note n-a"><b>Bought for ${$$(CUR.sale)} in ${CUR.saleDt.getFullYear()}, asking ${$$(CUR.price)}.</b>
+         A big markup on a recent purchase usually means a flip — pretty finishes over old bones. Ask what was actually
+         replaced (roof, furnace, wiring, plumbing) and get receipts, not adjectives.</div>`;
   } else {
     h += `<div class="note n-b">Add the asking price above and you'll get the full monthly cost.</div>`;
   }
@@ -1448,15 +1506,17 @@ async function loadCrime(){
 }
 
 /* ============================================================
-   SHARED LIST — one cloud blob, no accounts. (jsonblob.com)
+   SHARED LIST — one cloud document, no accounts. (jsonstorage.net)
    A single JSON document holds every home. Each phone reads it,
-   merges its own change in, writes it back. The "code" is just the
-   blob id, so joining = pasting a code — no link that opens Safari.
+   merges its own change in, writes it back. The "code" is the
+   document id, so joining = pasting a code — no link that opens Safari.
+   jsonstorage returns the new id in the response BODY (not a header),
+   which is why this works from GitHub Pages where header reads are blocked.
    ============================================================ */
-const JB = "https://jsonblob.com/api/jsonBlob";
-let BIN = ls("bin", null);            /* our blob id = the share code */
+const JS_BASE = "https://api.jsonstorage.net/v1/json";
+let BIN = ls("bin", null);            /* "userId/itemId" = the share code */
 let HOMES = [], WHO = ls("who",null);
-let ETAG = null, POLL = null, PULLING = false;
+let POLL = null, PULLING = false;
 
 function setWho(w){
   WHO=w; lset("who",w);
@@ -1466,27 +1526,29 @@ function setWho(w){
   renderSetup();
 }
 
-/* ---- low-level blob IO ---- */
-async function jbGet(id){
-  const r = await fetch(JB+"/"+id, {headers:{Accept:"application/json"}, cache:"no-store"});
+/* ---- low-level IO (jsonstorage.net — no auth, CORS, id comes back in the body) ---- */
+async function sGet(bin){
+  const r = await fetch(JS_BASE+"/"+bin, {headers:{Accept:"application/json"}, cache:"no-store"});
   if(!r.ok) throw new Error("HTTP "+r.status);
-  ETAG = r.headers.get("ETag");
   return await r.json();
 }
-async function jbPut(id, data){
-  const hdr = {"Content-Type":"application/json", Accept:"application/json"};
-  if(ETAG) hdr["If-Match"] = ETAG;
-  let r = await fetch(JB+"/"+id, {method:"PUT", headers:hdr, body:JSON.stringify(data)});
-  if(r.status===412){                       /* someone else wrote first — merge and retry once */
-    const fresh = await jbGet(id);
-    data = mergeDocs(fresh, data);
-    const h2 = {"Content-Type":"application/json", Accept:"application/json"};
-    if(ETAG) h2["If-Match"]=ETAG;
-    r = await fetch(JB+"/"+id, {method:"PUT", headers:h2, body:JSON.stringify(data)});
-  }
+async function sPut(bin, data){
+  const r = await fetch(JS_BASE+"/"+bin, {method:"PUT",
+    headers:{"Content-Type":"application/json", Accept:"application/json"},
+    body:JSON.stringify(data)});
   if(!r.ok) throw new Error("HTTP "+r.status);
-  ETAG = r.headers.get("ETag");
   return data;
+}
+/* returns the new "userId/itemId" path, parsed from the response BODY */
+async function sCreate(data){
+  const r = await fetch(JS_BASE, {method:"POST",
+    headers:{"Content-Type":"application/json", Accept:"application/json"},
+    body:JSON.stringify(data)});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  const j = await r.json();                       /* { uri: ".../v1/json/USER/ITEM" } */
+  const m = (j.uri||"").match(/\/v1\/json\/([^\/?#]+\/[^\/?#]+)/);
+  if(!m) throw new Error("no-id");
+  return m[1];
 }
 const nowDoc = () => ({v:1, homes:{}, touched:Date.now()});
 /* Merge two docs. Union homes by id; for a home both sides touched, combine
@@ -1521,31 +1583,25 @@ async function createList(){
   if(!WHO){ toast("First tap Travis or Kaylin above."); return; }
   toast("Setting up…");
   try{
-    const r = await fetch(JB, {method:"POST",
-      headers:{"Content-Type":"application/json", Accept:"application/json"},
-      body:JSON.stringify(nowDoc())});
-    if(!r.ok) throw new Error("HTTP "+r.status);
-    /* the new blob id lives in the Location header */
-    const loc = r.headers.get("Location") || "";
-    const id = loc.split("/").pop();
-    if(!id || !/^\d+$/.test(id)) throw new Error("no-id");
-    /* verify round-trip before we trust it */
-    await jbGet(id);
+    const id = await sCreate(nowDoc());
+    await sGet(id);                        /* verify round-trip before trusting it */
     BIN = id; lset("bin", id);
+    DOC = nowDoc();
     afterConnect(true);
-    toast("Your list is ready. Send Kaylin the code 💚");
+    toast("Your list is ready. Send your partner the code 💚");
   }catch(e){
-    toast("Couldn't reach the list service. Check your connection and try again.", 5000);
+    toast("Couldn't set up the list ("+esc(e.message)+"). Check your connection and try again.", 5000);
   }
 }
 async function joinList(code){
-  code = (code||"").trim().replace(/[^0-9]/g,"");   /* blob ids are digits */
-  if(!code){ toast("Paste the code your partner sent first."); return; }
+  code = (code||"").trim().replace(/^.*\/v1\/json\//,"").replace(/[?#].*$/,"").replace(/^\/+|\/+$/g,"");
+  if(!/^[^\/]+\/[^\/]+$/.test(code)){ toast("Paste the whole code your partner sent (it has a slash in it)."); return; }
   if(!WHO) setWho("kaylin");
   toast("Joining…");
   try{
-    await jbGet(code);
+    const d = await sGet(code);
     BIN = code; lset("bin", code);
+    DOC = d && d.homes ? d : nowDoc();
     afterConnect(true);
     toast("Connected 💚 You're both on the same list now.");
   }catch(e){
@@ -1579,32 +1635,49 @@ async function pull(){
   if(!BIN || PULLING) return;
   PULLING = true;
   try{
-    const fresh = await jbGet(BIN);
-    DOC = fresh && fresh.homes ? fresh : nowDoc();
+    const fresh = await sGet(BIN);
+    const before = JSON.stringify(DOC.homes||{});
+    DOC = mergeDocs(DOC, (fresh && fresh.homes) ? fresh : nowDoc());   /* keep local-only edits */
     HOMES = liveHomes(DOC);
-    drawList();
-    if(map) drawPins();
-    renderSetup();
+    drawList(); if(map) drawPins(); renderSetup();
+    /* if the merge produced something newer than the server (offline edits), push it once */
+    if(JSON.stringify(DOC.homes) !== JSON.stringify((fresh&&fresh.homes)||{}) && before!=="{}")
+      { try{ await sPut(BIN, DOC); }catch(e){} }
   }catch(e){ /* stay on last good copy */ }
   finally{ PULLING = false; }
 }
 async function writeHome(id, patch){
   if(!BIN){ toast("Set up the shared list first (Our list tab)."); return; }
-  DOC.homes = DOC.homes || {};
   const now = Date.now();
-  const cur = DOC.homes[id] || {id, _c:now, _f:{}};
-  cur._f = cur._f || {};
-  for(const k in patch) cur._f[k] = now;          /* stamp each changed field */
-  DOC.homes[id] = Object.assign(cur, patch, {_m:now});
+  /* instant local update so the UI never feels laggy */
+  DOC.homes = DOC.homes || {};
+  const loc = DOC.homes[id] || {id, _c:now, _f:{}};
+  loc._f = loc._f || {};
+  for(const k in patch) loc._f[k] = now;
+  DOC.homes[id] = Object.assign(loc, patch, {_m:now});
   HOMES = liveHomes(DOC);
   drawList(); if(map) drawPins();
-  try{ DOC = await jbPut(BIN, DOC); HOMES = liveHomes(DOC); }
-  catch(e){ toast("Saved on this phone — will sync when the list service responds."); }
+  /* safe remote write: pull latest, merge my field-stamped change in, push.
+     This preserves whatever the other phone changed in the meantime. */
+  try{
+    let remote;
+    try{ remote = await sGet(BIN); }catch(e){ remote = null; }
+    remote = (remote && remote.homes) ? remote : nowDoc();
+    const rcur = remote.homes[id] || {id, _c:now, _f:{}};
+    rcur._f = rcur._f || {};
+    for(const k in patch) rcur._f[k] = now;
+    remote.homes[id] = Object.assign(rcur, patch, {_m:now});
+    DOC = mergeDocs(DOC, remote);
+    await sPut(BIN, DOC);
+    HOMES = liveHomes(DOC);
+  }catch(e){ toast("Saved on this phone — it'll sync next time it connects."); }
 }
 function startPolling(){
   if(POLL) return;
-  POLL = setInterval(()=>{ if(document.visibilityState==="visible" && curTab()==="list") pull(); }, 20000);
-  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") pull(); });
+  /* gentle: only while the list tab is actually open, plus on focus.
+     Keeps us well inside the free request budget. */
+  POLL = setInterval(()=>{ if(document.visibilityState==="visible" && curTab()==="list") pull(); }, 60000);
+  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible" && curTab()==="list") pull(); });
 }
 const curTab = () => (document.querySelector(".tab.on")?.id||"").replace("t-","");
 
@@ -1661,8 +1734,14 @@ const SHOWING = [
   "Drive the commute at the actual hour you'd drive it"
 ];
 
+function syncViewPills(){
+  const v = ls("listview","grid");
+  if($("v-grid")) $("v-grid").className = "pill"+(v==="grid"?" on":"");
+  if($("v-cards")) $("v-cards").className = "pill"+(v==="cards"?" on":"");
+}
 function drawList(){
   if(!$("homes")) return;
+  syncViewPills();
   const sortBy = $("sort") ? $("sort").value : "fit";
   const filt   = $("filt") ? $("filt").value : "all";
   let hs = [...HOMES];
@@ -1682,23 +1761,55 @@ function drawList(){
     return;
   }
 
+  const view = ls("listview","grid");
+  /* GRID: scannable photo cards, like Zillow's results */
+  if(view==="grid"){
+    $("homes").innerHTML = `<div class="grid">` + hs.map(h=>{
+      const f = fit(h);
+      return `<div class="pcard">
+        <div class="photowrap" style="margin:0;border-radius:0">
+          <img class="photo" loading="lazy" src="${aerial(h.lat,h.lng,420,315)}" onerror="this.style.display='none'" alt="">
+          ${h.all_in?`<span class="price">${$$(h.all_in)}<small style="font-weight:400">/mo</small></span>`:h.price?`<span class="price">${$$(h.price)}</span>`:""}
+          ${f!=null?`<span class="badge" style="left:auto;right:8px;background:${f>=72?'var(--green)':f>=50?'var(--amber)':'var(--red)'}">${f}</span>`:""}
+        </div>
+        <div class="body2" onclick="lset('listview','cards');drawList();setTimeout(()=>{const el=document.getElementById('hc-${h.id}');if(el)el.scrollIntoView({behavior:'smooth'})},60)" style="cursor:pointer">
+          <div class="a">${esc(String(h.address).split(",")[0])}</div>
+          <div class="c">${h.all_in?$$(h.all_in)+"/mo":$$(h.price)}</div>
+          <div class="m">${[h.beds&&h.beds+"bd",h.baths&&h.baths+"ba",h.sqft&&h.sqft.toLocaleString()+"sf"].filter(Boolean).join(" · ")}</div>
+          <div class="m">${h.mixed?'<span class="tag t-a">⚠️ MIXED</span> ':""}${h.flood?'<span class="tag t-r">🌊</span> ':""}${(h.travis_rating||h.kaylin_rating)?`<span style="color:var(--amber)">${"★".repeat(Math.max(h.travis_rating||0,h.kaylin_rating||0))}</span>`:""}</div>
+        </div>
+      </div>`;
+    }).join("") + `</div>`;
+    if(hs.length>=2) drawCompare(hs);
+    return;
+  }
+  /* CARDS: full detail for deciding */
   $("homes").innerHTML = hs.map(h=>{
     const f = fit(h), c = h.checklist || {};
     const done = Object.values(c).filter(Boolean).length;
     const star = (who,val) => `<div class="stars">${[1,2,3,4,5].map(n=>
       `<button onclick="rate('${h.id}','${who}',${n})">${n<=(val||0)?"★":"☆"}</button>`).join("")}</div>`;
-    return `<div class="home">
+    return `<div class="home" id="hc-${h.id}">
+      <div class="photowrap">
+        <img class="photo" loading="lazy" src="${aerial(h.lat,h.lng,600,338)}" onerror="this.style.display='none'" alt="">
+        ${h.price?`<span class="price">${$$(h.price)}</span>`:""}
+        ${f!=null?`<span class="badge" style="left:auto;right:8px;background:${f>=72?'var(--green)':f>=50?'var(--amber)':'var(--red)'}">Fit ${f}</span>`:""}
+      </div>
       <div style="display:flex;gap:12px;align-items:flex-start">
         <div style="flex:1;min-width:0">
           <div class="addr">${esc(h.address)}</div>
           <div class="cost">${h.all_in?$$(h.all_in)+"/mo":$$(h.price)}</div>
           <div class="meta">${[h.beds&&h.beds+"bd", h.baths&&h.baths+"ba",
-             h.sqft&&h.sqft.toLocaleString()+"sf", h.year_built].filter(Boolean).join(" · ")}</div>
+             h.sqft&&h.sqft.toLocaleString()+"sf", h.year_built,
+             (h.price&&h.sqft)&&"$"+Math.round(h.price/h.sqft)+"/sqft"].filter(Boolean).join(" · ")}</div>
           <div class="meta">${esc(h.school_district||"")} ${h.mixed?'<span class="tag t-a">⚠️ MIXED</span>':""}
             ${h.flood?'<span class="tag t-r">🌊 FLOOD</span>':""}
             ${h.reassess_bump?`<span class="tag t-a">TAX +${$$(h.reassess_bump)}/mo</span>`:""}</div>
+          <div class="pills" style="margin-top:6px">
+            <a class="pill imglink" href="${streetViewLink(h.lat,h.lng)}" target="_blank" rel="noopener">🏠 Street View</a>
+            <a class="pill imglink" href="${mapLink(h.lat,h.lng)}" target="_blank" rel="noopener">🗺️ Map</a>
+          </div>
         </div>
-        ${f!=null?`<div class="score ${fitTag(f)}">${f}</div>`:""}
       </div>
       <div class="row" style="margin-top:10px;align-items:center">
         <div><div class="meta">Travis</div>${star("travis",h.travis_rating)}</div>
@@ -1722,26 +1833,27 @@ function drawList(){
       </div>
     </div>`;
   }).join("");
-
-  /* compare table */
-  if(hs.length>=2){
-    const top = hs.slice(0,4);
-    const row = (lab, fn) => `<tr><td>${lab}</td>${top.map(h=>`<td>${fn(h)}</td>`).join("")}</tr>`;
-    $("compare").innerHTML = `<div class="card"><h2>Side by side</h2><div class="scroll">
-      <table class="cmp">
-        ${row("", h=>`<b>${esc(String(h.address).split(",")[0].slice(0,16))}</b>`)}
-        ${row("Fit", h=>{const f=fit(h); return f!=null?`<span class="tag ${fitTag(f)}">${f}</span>`:"—";})}
-        ${row("All in /mo", h=>h.all_in?$$(h.all_in):"—")}
-        ${row("Price", h=>$$(h.price))}
-        ${row("Sq ft", h=>h.sqft?h.sqft.toLocaleString():"—")}
-        ${row("Built", h=>h.year_built||"—")}
-        ${row("Schools", h=>esc(String(h.school_district||"—").slice(0,14)))}
-        ${row("Owner-occ", h=>h.own_pct!=null?h.own_pct+"%":"—")}
-        ${row("Tax jump", h=>h.reassess_bump?"+"+$$(h.reassess_bump):"—")}
-        ${row("Travis", h=>"★".repeat(h.travis_rating||0)||"—")}
-        ${row("Kaylin", h=>"★".repeat(h.kaylin_rating||0)||"—")}
-      </table></div></div>`;
-  } else $("compare").innerHTML = "";
+  if(hs.length>=2) drawCompare(hs); else $("compare").innerHTML = "";
+}
+function drawCompare(hs){
+  const top = hs.slice(0,4);
+  const row = (lab, fn) => `<tr><td>${lab}</td>${top.map(h=>`<td>${fn(h)}</td>`).join("")}</tr>`;
+  $("compare").innerHTML = `<details><summary>Compare top ${top.length} side by side<span class="cap">Fit, cost, schools, your stars</span></summary>
+    <div class="body"><div class="scroll">
+    <table class="cmp">
+      ${row("", h=>`<b>${esc(String(h.address).split(",")[0].slice(0,16))}</b>`)}
+      ${row("Fit", h=>{const f=fit(h); return f!=null?`<span class="tag ${fitTag(f)}">${f}</span>`:"—";})}
+      ${row("All in /mo", h=>h.all_in?$$(h.all_in):"—")}
+      ${row("Price", h=>$$(h.price))}
+      ${row("$/sqft", h=>(h.price&&h.sqft)?"$"+Math.round(h.price/h.sqft):"—")}
+      ${row("Sq ft", h=>h.sqft?h.sqft.toLocaleString():"—")}
+      ${row("Built", h=>h.year_built||"—")}
+      ${row("Schools", h=>esc(String(h.school_district||"—").slice(0,14)))}
+      ${row("Owner-occ", h=>h.own_pct!=null?h.own_pct+"%":"—")}
+      ${row("Tax jump", h=>h.reassess_bump?"+"+$$(h.reassess_bump):"—")}
+      ${row("Travis", h=>"★".repeat(h.travis_rating||0)||"—")}
+      ${row("Kaylin", h=>"★".repeat(h.kaylin_rating||0)||"—")}
+    </table></div></div></details>`;
 }
 
 /* ============================================================
@@ -1953,9 +2065,9 @@ async function diag(){
     return (j.elements||[]).length+" found"; });
   await test("OSRM (commute)", async()=>{
     const m = await drive(39.96,-83.00,{lat:40.09,lng:-83.14}); return m ? m+" min" : "no route"; });
-  await test("Shared list (jsonblob)", async()=>{
+  await test("Shared list (jsonstorage)", async()=>{
     if(!BIN) throw new Error("not set up yet");
-    await jbGet(BIN); return "OK — "+HOMES.length+" home(s)"; });
+    await sGet(BIN); return "OK — "+HOMES.length+" home(s)"; });
   $("diag").innerHTML = `<div class="led" style="margin-top:12px">` + t.map(([n,ok,m])=>
     `<div class="li"><span class="k">${esc(n)}<small>${esc(m)}</small></span>
      <span class="v">${ok?'<span class="tag t-g">OK</span>':'<span class="tag t-r">FAIL</span>'}</span></div>`).join("") +
