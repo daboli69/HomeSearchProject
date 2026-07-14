@@ -211,24 +211,31 @@ a{color:var(--green);font-weight:600}
 <section id="t-list" class="tab">
   <div id="connect" class="card">
     <h2>Our shared list</h2>
-    <p class="sub">Set up once on Travis's phone, then send Kaylin a link she just taps. Nothing to type on her end.</p>
-    <label for="sb-url">Supabase URL</label><input id="sb-url" placeholder="https://xxxx.supabase.co">
-    <label for="sb-key">Anon key</label><input id="sb-key" placeholder="eyJ...">
-    <label for="sb-house">Household code<span class="hint">Any private phrase. Must match on both phones.</span></label>
-    <input id="sb-house" placeholder="kandt2026">
+    <p class="sub">One shared list you both see. No accounts, no passwords, no setup files. Pick whose phone this is, then either start the list or join with a code.</p>
     <label>Whose phone is this?</label>
     <div class="pills">
       <button class="pill" id="who-t" onclick="setWho('travis')">Travis</button>
       <button class="pill" id="who-k" onclick="setWho('kaylin')">Kaylin</button>
     </div>
-    <button class="b1" style="margin-top:8px" onclick="connect()">Connect</button>
+    <div style="height:14px"></div>
+    <button class="b1" onclick="createList()">Start our list</button>
+    <p class="sub" style="text-align:center;margin:10px 0 6px">— or —</p>
+    <label for="joincode">Join with a code
+      <span class="hint">Paste the code your partner sent you. That's the whole setup.</span></label>
+    <input id="joincode" placeholder="paste code here" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <button class="b2" style="width:100%;margin-top:8px" onclick="joinList($('joincode').value)">Join</button>
   </div>
 
   <div id="listui" style="display:none">
-    <div class="card">
-      <h2>Invite Kaylin</h2>
-      <p class="sub">Sends a link that sets her phone up automatically — connected and ready.</p>
-      <button class="b3" style="width:100%" onclick="invite()">Send invite link</button>
+    <div class="card" id="sharecard">
+      <h2>Add your partner</h2>
+      <p class="sub">Send this code once. They open the app, tap Join, and paste it. Both phones then stay in sync automatically.</p>
+      <input id="mycode" readonly onclick="this.select()" style="text-align:center;font-family:var(--m);font-weight:600">
+      <div class="row" style="margin-top:8px">
+        <button class="b3" onclick="copyCode()">Copy code</button>
+        <button class="b1" onclick="shareCode()">Send it</button>
+      </div>
+      <p class="sub" id="synced" style="margin-top:8px"></p>
     </div>
     <div class="card">
       <div class="row">
@@ -485,7 +492,6 @@ a{color:var(--green);font-weight:600}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 "use strict";
 /* ============================================================
@@ -1261,7 +1267,18 @@ function initMap(){
   L_ = {crime:{g:null,on:false}, sketch:{g:null,on:false}, up:{g:null,on:false}};
   drawPins();
   setChip("homes", true);
-  map.on("moveend", ()=>{ for(const k of ["sketch","up"]) if(L_[k].on) loadPOI(k); });
+  let moveT=null, lastC=map.getCenter();
+  map.on("moveend", ()=>{
+    clearTimeout(moveT);
+    moveT = setTimeout(()=>{
+      const c = map.getCenter();
+      /* ignore tiny nudges — only refetch after a real move (~600m+) */
+      if(lastC && map.distance(c,lastC) < 600) return;
+      lastC = c;
+      for(const k of ["sketch","up"]) if(L_[k].on) loadPOI(k);
+      if(L_.crime.on) loadCrime();
+    }, 500);
+  });
 }
 function drawPins(){
   if(!pinLayer) return;
@@ -1398,14 +1415,23 @@ async function loadPOI(k){
 async function loadCrime(){
   setChip("crime", true, "🔥 loading…");
   try{
-    const r = await fetch("https://services2.arcgis.com/ziXVKVy3BiopMCCU/arcgis/rest/services/Crime_Reports/FeatureServer/0/query?where=1%3D1&outFields=OBJECTID&returnGeometry=true&outSR=4326&resultRecordCount=2000&f=json");
+    /* Only the current viewport — not the whole city. Massively faster,
+       and it's all you can see anyway. */
+    const b = map.getBounds();
+    const env = JSON.stringify({xmin:b.getWest(),ymin:b.getSouth(),xmax:b.getEast(),ymax:b.getNorth(),spatialReference:{wkid:4326}});
+    const url = "https://services2.arcgis.com/ziXVKVy3BiopMCCU/arcgis/rest/services/Crime_Reports/FeatureServer/0/query"
+      + "?where=1%3D1&geometry="+encodeURIComponent(env)
+      + "&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects"
+      + "&outFields=OBJECTID&returnGeometry=true&outSR=4326&resultRecordCount=1000&f=json";
+    const ac = new AbortController(); setTimeout(()=>ac.abort(), 9000);
+    const r = await fetch(url, {signal:ac.signal});
     const j = await r.json();
     if(j.error || !j.features) throw new Error("no data");
     const pts = j.features.filter(f=>f.geometry).map(f=>[f.geometry.y, f.geometry.x, 0.6]);
     if(L_.crime.g) map.removeLayer(L_.crime.g);
     L_.crime.g = L.heatLayer(pts,{radius:22,blur:16,maxZoom:16}).addTo(map);
     L_.crime.on = true;
-    setChip("crime", true, `🔥 ${pts.length}`);
+    setChip("crime", true, pts.length ? `🔥 ${pts.length}` : "🔥 none here");
     $("mapout").innerHTML = `<div class="card"><h2>Crime heat</h2>
       <p class="sub"><b>This only covers Columbus city.</b> Dublin, Westerville, Hilliard, Upper Arlington and the
       townships run their own police departments and don't publish to this feed. If a suburb looks empty, that means
@@ -1422,10 +1448,15 @@ async function loadCrime(){
 }
 
 /* ============================================================
-   SHARED LIST (Supabase)
+   SHARED LIST — one cloud blob, no accounts. (jsonblob.com)
+   A single JSON document holds every home. Each phone reads it,
+   merges its own change in, writes it back. The "code" is just the
+   blob id, so joining = pasting a code — no link that opens Safari.
    ============================================================ */
-let SB=null, HOMES=[], WHO=ls("who",null);
-const CFG = () => ls("sb",null);
+const JB = "https://jsonblob.com/api/jsonBlob";
+let BIN = ls("bin", null);            /* our blob id = the share code */
+let HOMES = [], WHO = ls("who",null);
+let ETAG = null, POLL = null, PULLING = false;
 
 function setWho(w){
   WHO=w; lset("who",w);
@@ -1434,107 +1465,184 @@ function setWho(w){
   if(k) k.className = "pill"+(w==="kaylin"?" on":"");
   renderSetup();
 }
-function connect(silent){
-  const cfg = silent ? CFG() : {
-    url:  ($("sb-url").value||"").trim().replace(/\/+$/,""),
-    key:  ($("sb-key").value||"").trim(),
-    house:($("sb-house").value||"").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-").replace(/^-+|-+$/g,"")
-  };
-  if(!cfg || !cfg.url || !cfg.key || !cfg.house){
-    if(!silent) toast("Fill in all three fields first.");
-    return;
+
+/* ---- low-level blob IO ---- */
+async function jbGet(id){
+  const r = await fetch(JB+"/"+id, {headers:{Accept:"application/json"}, cache:"no-store"});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  ETAG = r.headers.get("ETag");
+  return await r.json();
+}
+async function jbPut(id, data){
+  const hdr = {"Content-Type":"application/json", Accept:"application/json"};
+  if(ETAG) hdr["If-Match"] = ETAG;
+  let r = await fetch(JB+"/"+id, {method:"PUT", headers:hdr, body:JSON.stringify(data)});
+  if(r.status===412){                       /* someone else wrote first — merge and retry once */
+    const fresh = await jbGet(id);
+    data = mergeDocs(fresh, data);
+    const h2 = {"Content-Type":"application/json", Accept:"application/json"};
+    if(ETAG) h2["If-Match"]=ETAG;
+    r = await fetch(JB+"/"+id, {method:"PUT", headers:h2, body:JSON.stringify(data)});
   }
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  ETAG = r.headers.get("ETag");
+  return data;
+}
+const nowDoc = () => ({v:1, homes:{}, touched:Date.now()});
+/* Merge two docs. Union homes by id; for a home both sides touched, combine
+   FIELD by field so Travis rating + Kaylin note on the same house don't
+   clobber each other. Per-field timestamps (_f) decide ties; a delete wins. */
+function mergeHome(x, y){
+  if(!x) return y; if(!y) return x;
+  const base = (y._m||0) >= (x._m||0) ? {...x, ...y} : {...y, ...x};
+  base._m = Math.max(x._m||0, y._m||0);
+  base._c = Math.min(x._c||base._m, y._c||base._m);
+  base._f = {};
+  const keys = new Set([...Object.keys(x._f||{}), ...Object.keys(y._f||{})]);
+  for(const k of keys){
+    const tx=(x._f||{})[k]||0, ty=(y._f||{})[k]||0;
+    if(ty>=tx){ if(k in y) base[k]=y[k]; base._f[k]=ty; }
+    else      { if(k in x) base[k]=x[k]; base._f[k]=tx; }
+  }
+  if(x._del || y._del) base._del = true;
+  return base;
+}
+function mergeDocs(a, b){
+  const out = {v:1, homes:{}, touched:Date.now()};
+  const ids = new Set([...Object.keys(a.homes||{}), ...Object.keys(b.homes||{})]);
+  for(const id of ids) out.homes[id] = mergeHome(a.homes?.[id], b.homes?.[id]);
+  return out;
+}
+const liveHomes = doc => Object.values(doc.homes||{}).filter(h=>!h._del)
+  .sort((a,b)=>(b._c||0)-(a._c||0));
+
+/* ---- setup: create / join ---- */
+async function createList(){
+  if(!WHO){ toast("First tap Travis or Kaylin above."); return; }
+  toast("Setting up…");
   try{
-    SB = supabase.createClient(cfg.url, cfg.key);
-  }catch(e){ toast("Couldn't connect: "+esc(e.message)); return; }
-  lset("sb", cfg);
+    const r = await fetch(JB, {method:"POST",
+      headers:{"Content-Type":"application/json", Accept:"application/json"},
+      body:JSON.stringify(nowDoc())});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    /* the new blob id lives in the Location header */
+    const loc = r.headers.get("Location") || "";
+    const id = loc.split("/").pop();
+    if(!id || !/^\d+$/.test(id)) throw new Error("no-id");
+    /* verify round-trip before we trust it */
+    await jbGet(id);
+    BIN = id; lset("bin", id);
+    afterConnect(true);
+    toast("Your list is ready. Send Kaylin the code 💚");
+  }catch(e){
+    toast("Couldn't reach the list service. Check your connection and try again.", 5000);
+  }
+}
+async function joinList(code){
+  code = (code||"").trim().replace(/[^0-9]/g,"");   /* blob ids are digits */
+  if(!code){ toast("Paste the code your partner sent first."); return; }
+  if(!WHO) setWho("kaylin");
+  toast("Joining…");
+  try{
+    await jbGet(code);
+    BIN = code; lset("bin", code);
+    afterConnect(true);
+    toast("Connected 💚 You're both on the same list now.");
+  }catch(e){
+    toast("That code didn't work. Copy it again from your partner's Send button.", 5000);
+  }
+}
+function afterConnect(fresh){
   $("connect").style.display = "none";
   $("listui").style.display  = "block";
-  loadHomes();
-  SB.channel("homes-"+cfg.house)
-    .on("postgres_changes", {event:"*", schema:"public", table:"homes", filter:"household=eq."+cfg.house},
-        () => loadHomes())
-    .subscribe();
-  if(!silent) toast("Connected. Your list is now shared.");
+  if($("mycode")) $("mycode").value = BIN;
+  if($("synced")) $("synced").textContent = WHO ? ("This is "+(WHO==="travis"?"Travis":"Kaylin")+"'s phone.") : "";
+  pull();
+  startPolling();
   renderSetup();
 }
-function invite(){
-  const cfg = CFG(); if(!cfg){ toast("Connect first."); return; }
-  let payload;
-  try{ payload = btoa(unescape(encodeURIComponent(JSON.stringify(cfg)))); }
-  catch(e){ toast("Couldn't build the invite — try a simpler household code."); return; }
-  const link = location.origin + location.pathname + "#join=" + payload;
-  const msg = "Our home search app — tap this and it sets itself up:\n\n" + link +
-              "\n\nThen tap Share → Add to Home Screen.";
-  if(navigator.share) navigator.share({title:"Kaylin & Travis — Home Search", text:msg}).catch(()=>{});
-  else { navigator.clipboard.writeText(msg).then(()=>toast("Invite copied — paste it to her.")); }
+function copyCode(){
+  if(!BIN) return;
+  navigator.clipboard.writeText(BIN).then(()=>toast("Code copied — paste it to your partner."))
+    .catch(()=>{ $("mycode").select(); toast("Tap the code, then Copy."); });
 }
-function consumeInvite(){
-  const m = location.hash.match(/#join=(.+)/);
-  if(!m) return;
+function shareCode(){
+  if(!BIN) return;
+  const msg = "Here's the code for our home search list — open the app, tap Our list → Join, and paste this:\n\n"+BIN;
+  if(navigator.share) navigator.share({title:"Our home list code", text:msg}).catch(()=>{});
+  else navigator.clipboard.writeText(msg).then(()=>toast("Message copied — send it to your partner."));
+}
+
+/* ---- sync ---- */
+let DOC = nowDoc();
+async function pull(){
+  if(!BIN || PULLING) return;
+  PULLING = true;
   try{
-    const cfg = JSON.parse(decodeURIComponent(escape(atob(m[1]))));
-    lset("sb", cfg);
-    if(!ls("who",null)) setWho("kaylin");   /* invitee is Kaylin by default */
-    history.replaceState(null,"",location.pathname);
-    toast("You're connected to Travis's list 💚", 4200);
-  }catch(e){}
+    const fresh = await jbGet(BIN);
+    DOC = fresh && fresh.homes ? fresh : nowDoc();
+    HOMES = liveHomes(DOC);
+    drawList();
+    if(map) drawPins();
+    renderSetup();
+  }catch(e){ /* stay on last good copy */ }
+  finally{ PULLING = false; }
 }
-async function loadHomes(){
-  const cfg = CFG(); if(!SB || !cfg) return;
-  const {data, error} = await SB.from("homes").select("*")
-    .eq("household", cfg.house).order("created_at",{ascending:false});
-  if(error){ toast("List error: "+esc(error.message)); return; }
-  HOMES = data || [];
-  drawList();
-  if(map) drawPins();
-  renderSetup();
+async function writeHome(id, patch){
+  if(!BIN){ toast("Set up the shared list first (Our list tab)."); return; }
+  DOC.homes = DOC.homes || {};
+  const now = Date.now();
+  const cur = DOC.homes[id] || {id, _c:now, _f:{}};
+  cur._f = cur._f || {};
+  for(const k in patch) cur._f[k] = now;          /* stamp each changed field */
+  DOC.homes[id] = Object.assign(cur, patch, {_m:now});
+  HOMES = liveHomes(DOC);
+  drawList(); if(map) drawPins();
+  try{ DOC = await jbPut(BIN, DOC); HOMES = liveHomes(DOC); }
+  catch(e){ toast("Saved on this phone — will sync when the list service responds."); }
 }
+function startPolling(){
+  if(POLL) return;
+  POLL = setInterval(()=>{ if(document.visibilityState==="visible" && curTab()==="list") pull(); }, 20000);
+  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") pull(); });
+}
+const curTab = () => (document.querySelector(".tab.on")?.id||"").replace("t-","");
+
+/* ---- mutations ---- */
 async function save(){
   if(!CUR){ return; }
-  if(!SB){ toast("Set up the shared list first (Our list tab)."); go("list", document.querySelector('nav button[data-t="list"]')); return; }
-  const cfg = CFG();
-  if(HOMES.some(h=>h.address===CUR.addr)){ toast("Already on your list."); return; }
-  const row = {
-    household: cfg.house, address: CUR.addr, lat: CUR.lat, lng: CUR.lng,
-    url: CUR.url, price: CUR.price, sqft: CUR.sqft, year_built: CUR.yr,
-    beds: CUR.beds, baths: CUR.baths, school_district: CUR.school,
-    tax_district: CUR.code, appraised: CUR.appr, all_in: CUR.allIn,
-    monthly_est: CUR.monthly_est, util_est: CUR.util_est,
+  if(!BIN){ toast("Set up the shared list first (Our list tab)."); go("list", document.querySelector('nav button[data-t="list"]')); return; }
+  if(Object.values(DOC.homes||{}).some(h=>!h._del && h.address===CUR.addr)){ toast("Already on your list."); return; }
+  const id = "h"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  await writeHome(id, {
+    address: CUR.addr, lat: CUR.lat, lng: CUR.lng, url: CUR.url, price: CUR.price,
+    sqft: CUR.sqft, year_built: CUR.yr, beds: CUR.beds, baths: CUR.baths,
+    school_district: CUR.school, tax_district: CUR.code, appraised: CUR.appr,
+    all_in: CUR.allIn, monthly_est: CUR.monthly_est, util_est: CUR.util_est,
     reassess_bump: CUR.reassess_bump, mixed: CUR.mixed, flood: CUR.flood,
     price_ratio: CUR.price_ratio, own_pct: CUR.own_pct, sketch_n: CUR.sketch_n,
     up_n: CUR.up_n, amenity_n: CUR.amenity_n, water_n: CUR.water_n,
     commute_travis: CUR.commute_travis, commute_kaylin: CUR.commute_kaylin,
-    added_by: WHO || "travis"
-  };
-  const {error} = await SB.from("homes").insert(row);
-  if(error){ toast("Save failed: "+esc(error.message), 5000); return; }
+    added_by: WHO || "travis", _c: Date.now()
+  });
   toast("Saved 💚 It's on both phones now.");
-  loadHomes();
 }
-async function rate(id, who, n){
-  const {error} = await SB.from("homes").update({[who+"_rating"]:n}).eq("id",id);
-  if(error) toast("Couldn't save that rating."); else loadHomes();
-}
+async function rate(id, who, n){ await writeHome(id, {[who+"_rating"]:n}); }
 async function note(id){
   if(!WHO){ toast("Pick whose phone this is on the Our list tab."); return; }
-  const cur = HOMES.find(h=>h.id===id)?.[WHO+"_note"] || "";
+  const cur = DOC.homes?.[id]?.[WHO+"_note"] || "";
   const t = prompt("Your note on this home:", cur);
   if(t===null) return;
-  await SB.from("homes").update({[WHO+"_note"]:t}).eq("id",id);
-  loadHomes();
+  await writeHome(id, {[WHO+"_note"]:t});
 }
 async function del(id){
   if(!confirm("Remove this home from your list?")) return;
-  await SB.from("homes").delete().eq("id",id);
-  loadHomes();
+  await writeHome(id, {_del:true});
 }
 async function check(id, i){
-  const h = HOMES.find(x=>x.id===id); if(!h) return;
-  const c = h.checklist || {};
+  const c = Object.assign({}, DOC.homes?.[id]?.checklist || {});
   c[i] = !c[i];
-  await SB.from("homes").update({checklist:c}).eq("id",id);
-  loadHomes();
+  await writeHome(id, {checklist:c});
 }
 const SHOWING = [
   "Water pressure — run every faucet at once",
@@ -1790,7 +1898,7 @@ function grants(){
 function renderSetup(){
   const el = $("setup"); if(!el) return;
   const done = {
-    list:   !!CFG(),
+    list:   !!BIN,
     who:    !!WHO,
     budget: budget()!=null,
     dist:   prefs().length>0,
@@ -1821,7 +1929,7 @@ function go(t, btn){
   window.scrollTo(0,0);
   if(t==="map")   initMap();
   if(t==="money") renderWeights();
-  if(t==="list")  { if(!SB) connect(true); drawList(); }
+  if(t==="list")  { if(BIN && !HOMES.length) pull(); drawList(); }
   renderSetup();
 }
 async function diag(){
@@ -1845,10 +1953,9 @@ async function diag(){
     return (j.elements||[]).length+" found"; });
   await test("OSRM (commute)", async()=>{
     const m = await drive(39.96,-83.00,{lat:40.09,lng:-83.14}); return m ? m+" min" : "no route"; });
-  await test("Shared list (Supabase)", async()=>{
-    if(!SB) throw new Error("not connected");
-    const {error} = await SB.from("homes").select("id").limit(1);
-    if(error) throw new Error(error.message); return "OK"; });
+  await test("Shared list (jsonblob)", async()=>{
+    if(!BIN) throw new Error("not set up yet");
+    await jbGet(BIN); return "OK — "+HOMES.length+" home(s)"; });
   $("diag").innerHTML = `<div class="led" style="margin-top:12px">` + t.map(([n,ok,m])=>
     `<div class="li"><span class="k">${esc(n)}<small>${esc(m)}</small></span>
      <span class="v">${ok?'<span class="tag t-g">OK</span>':'<span class="tag t-r">FAIL</span>'}</span></div>`).join("") +
@@ -1858,11 +1965,10 @@ async function diag(){
 
 /* ---------- boot ---------- */
 (function boot(){
-  consumeInvite();
-  const cfg = CFG();
-  if(cfg){ if($("sb-url")) $("sb-url").value=cfg.url; if($("sb-key")) $("sb-key").value=cfg.key;
-           if($("sb-house")) $("sb-house").value=cfg.house; connect(true); }
+  const codeHash = location.hash.match(/#(?:join|code)=(\d+)/);
+  if(codeHash && !BIN){ joinList(codeHash[1]); history.replaceState(null,"",location.pathname); }
   if(WHO) setWho(WHO);
+  if(BIN) afterConnect();
   const v = (id,k) => { const x=ls(k,null); if(x!=null && $(id)) $(id).value=x; };
   v("m-budget","budget"); v("m-cash","cash"); v("m-rate","rate"); v("m-down","down"); v("m-rent","rent");
   if($("sort")) $("sort").value = ls("sort","fit");
