@@ -236,6 +236,20 @@ a{color:var(--green);font-weight:600}
       <button class="pill" id="who-k" onclick="setWho('kaylin')">Kaylin</button>
     </div>
     <div style="height:14px"></div>
+    <details id="keysetup">
+      <summary>First time? Get a free sync key<span class="cap">30 seconds · Travis only, once</span></summary>
+      <div class="body">
+        <p class="sub">This free key is what keeps both phones in sync. No credit card.</p>
+        <ol style="font-size:13px;color:var(--ink2);padding-left:18px;line-height:1.8;margin:6px 0">
+          <li>Open <a href="https://jsonbin.io/login" target="_blank" rel="noopener">jsonbin.io</a> → sign up (email + password).</li>
+          <li>Open <b>API Keys</b> in the menu, copy the <b>Master Key</b>.</li>
+          <li>Paste it here 👇</li>
+        </ol>
+        <input id="synckey" placeholder="paste your jsonbin Master Key" autocapitalize="off" autocorrect="off" spellcheck="false"
+          onchange="lset('synckey',this.value.trim())">
+        <p class="sub" style="font-size:11.5px;margin-top:6px">Use a fresh jsonbin account just for this — the key is shared with Kaylin inside the code, so it should only unlock this one list.</p>
+      </div>
+    </details>
     <button class="b1" onclick="createList()">Start our list</button>
     <p class="sub" style="text-align:center;margin:10px 0 6px">— or —</p>
     <label for="joincode">Join with a code
@@ -284,7 +298,7 @@ a{color:var(--green);font-weight:600}
   <div class="pills" style="margin-bottom:8px">
     <button class="pill" id="L-homes" onclick="toggle('homes')">📍 Our homes</button>
     <button class="pill" id="L-school" onclick="toggle('school')">🎓 School districts</button>
-    <button class="pill" id="L-crime" onclick="toggle('crime')">🔥 Crime</button>
+    <button class="pill" id="L-rentals" onclick="toggle('rentals')">🏠 Rentals</button>
     <button class="pill" id="L-sketch" onclick="toggle('sketch')">🚩 Sketch</button>
     <button class="pill" id="L-up" onclick="toggle('up')">🏳️‍🌈 Up &amp; coming</button>
   </div>
@@ -1322,7 +1336,7 @@ function initMap(){
   L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
     {maxZoom:19, attribution:"© OpenStreetMap © CARTO"}).addTo(map);
   pinLayer = L.layerGroup().addTo(map);
-  L_ = {crime:{g:null,on:false}, sketch:{g:null,on:false}, up:{g:null,on:false}};
+  L_ = {rentals:{g:null,on:false}, sketch:{g:null,on:false}, up:{g:null,on:false}};
   drawPins();
   setChip("homes", true);
   let moveT=null, lastC=map.getCenter();
@@ -1334,7 +1348,7 @@ function initMap(){
       if(lastC && map.distance(c,lastC) < 600) return;
       lastC = c;
       for(const k of ["sketch","up"]) if(L_[k].on) loadPOI(k);
-      if(L_.crime.on) loadCrime();
+      if(L_.rentals.on) loadRentals();
     }, 500);
   });
 }
@@ -1382,9 +1396,9 @@ function toggle(k){
   }
   const l = L_[k];
   if(l.on){ if(l.g) map.removeLayer(l.g); l.on=false; setChip(k,false,
-    k==="crime"?"🔥 Crime":k==="sketch"?"🚩 Sketch":"🏳️‍🌈 Up & coming"); $("mapout").innerHTML=""; return; }
+    k==="rentals"?"🏠 Rentals":k==="sketch"?"🚩 Sketch":"🏳️‍🌈 Up & coming"); $("mapout").innerHTML=""; return; }
   l.on = true;
-  k==="crime" ? loadCrime() : loadPOI(k);
+  k==="rentals" ? loadRentals() : loadPOI(k);
 }
 const QS = {
  sketch: (b)=>`[out:json][timeout:25];
@@ -1470,51 +1484,74 @@ async function loadPOI(k){
        <p class="sub">Also counted: breweries, specialty coffee, galleries, record shops, bookshops, bike shops, vintage.
        The play is a cluster of these next to homes that are <b>still cheap</b>. If prices already moved, you're late.</p></div>`;
 }
-async function loadCrime(){
-  setChip("crime", true, "🔥 loading…");
+/* RENTAL DENSITY — from the county parcel layer (the same source the whole app
+   already uses, so it's reliable and covers ALL of Franklin County, not just
+   Columbus). Clusters of rentals = absentee-owned blocks: not "unsafe" by itself,
+   but it drives how a street is kept up and how it holds value. This replaced the
+   old Columbus-only crime feed, which the city kept moving and which never covered
+   the suburbs you're actually shopping. */
+async function loadRentals(){
+  const z = map.getZoom();
+  if(z < 13){
+    L_.rentals.on = false;
+    setChip("rentals", true, "🏠 zoom in");
+    $("mapout").innerHTML = `<div class="card"><div class="note n-b"><b>Zoom in to load rentals.</b>
+      This reads every parcel in view from the county, so it needs a neighbourhood-level zoom (not the whole city).</div></div>`;
+    return;
+  }
+  setChip("rentals", true, "🏠 loading…");
   try{
-    /* Only the current viewport — not the whole city. Massively faster,
-       and it's all you can see anyway. */
     const b = map.getBounds();
     const env = JSON.stringify({xmin:b.getWest(),ymin:b.getSouth(),xmax:b.getEast(),ymax:b.getNorth(),spatialReference:{wkid:4326}});
-    const url = "https://services2.arcgis.com/ziXVKVy3BiopMCCU/arcgis/rest/services/Crime_Reports/FeatureServer/0/query"
-      + "?where=1%3D1&geometry="+encodeURIComponent(env)
-      + "&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects"
-      + "&outFields=OBJECTID&returnGeometry=true&outSR=4326&resultRecordCount=1000&f=json";
-    const ac = new AbortController(); setTimeout(()=>ac.abort(), 9000);
-    const r = await fetch(url, {signal:ac.signal});
-    const j = await r.json();
-    if(j.error || !j.features) throw new Error("no data");
-    const pts = j.features.filter(f=>f.geometry).map(f=>[f.geometry.y, f.geometry.x, 0.6]);
-    if(L_.crime.g) map.removeLayer(L_.crime.g);
-    L_.crime.g = L.heatLayer(pts,{radius:22,blur:16,maxZoom:16}).addTo(map);
-    L_.crime.on = true;
-    setChip("crime", true, pts.length ? `🔥 ${pts.length}` : "🔥 none here");
-    $("mapout").innerHTML = `<div class="card"><h2>Crime heat</h2>
-      <p class="sub"><b>This only covers Columbus city.</b> Dublin, Westerville, Hilliard, Upper Arlington and the
-      townships run their own police departments and don't publish to this feed. If a suburb looks empty, that means
-      <b>no data was published</b> — not that nothing happens there. For those places use the owner-occupancy figure
-      on each home instead; that works county-wide.</p></div>`;
+    /* only rental parcels — that's the signal. Simplify geometry to keep it light. */
+    const f = await esriQuery(PARCEL, {
+      geometry:env, geometryType:"esriGeometryEnvelope", inSR:"4326",
+      spatialRel:"esriSpatialRelIntersects", where:"RENTAL='Y'",
+      outFields:"OBJECTID", returnGeometry:"true", outSR:"4326",
+      maxAllowableOffset:"0.0004", resultRecordCount:"3000"
+    });
+    const cen = g => {
+      if(!g) return null;
+      if(g.rings){ const r=g.rings[0]; let sx=0,sy=0; r.forEach(p=>{sx+=p[0];sy+=p[1];}); return [sy/r.length, sx/r.length, 0.55]; }
+      if(g.x!=null) return [g.y, g.x, 0.55];
+      return null;
+    };
+    const pts = f.map(x=>cen(x.geometry)).filter(Boolean);
+    if(L_.rentals.g) map.removeLayer(L_.rentals.g);
+    L_.rentals.g = L.heatLayer(pts, {radius:20, blur:15, maxZoom:17,
+      gradient:{0.2:"#2563A8", 0.5:"#B2740C", 0.9:"#B3402E"}}).addTo(map);
+    L_.rentals.on = true;
+    setChip("rentals", true, pts.length ? `🏠 ${pts.length}` : "🏠 none here");
+    $("mapout").innerHTML = `<div class="card"><h2>Rental density${pts.length>=3000?" (capped)":""}</h2>
+      <p class="sub">Every <b>rental</b> parcel the county has on record in this view. Hot spots are streets where
+      most homes are owned by landlords, not the people living in them.</p>
+      <p class="sub"><b>Why it matters more than a crime map:</b> it comes from the county, so it covers Westerville,
+      Dublin, Hilliard and the townships just the same as Columbus — a crime feed only ever covered the city. Owner-occupied
+      blocks tend to be better kept and hold value better; a wall of rentals is worth seeing in person before you fall for a listing.</p>
+      <p class="sub" style="font-size:11.5px">Not a verdict — plenty of good streets have some rentals. A dense cluster is the flag.</p></div>`;
   }catch(e){
-    L_.crime.on=false;
-    setChip("crime", false, "🔥 Crime");
-    $("L-crime").classList.add("err");
-    $("mapout").innerHTML = `<div class="card"><div class="note n-a"><b>Crime feed unavailable.</b>
-      Columbus changes this endpoint periodically. Use owner-occupancy on each home — it's a steadier signal anyway
-      and it covers the whole county.</div></div>`;
+    L_.rentals.on=false;
+    setChip("rentals", false, "🏠 Rentals");
+    $("L-rentals").classList.add("err");
+    $("mapout").innerHTML = `<div class="card"><div class="note n-a"><b>Couldn't load parcels just now.</b>
+      The county GIS server was busy — wait a moment and tap again. Every home's card still shows its own
+      owner-occupied % from the same data.</div></div>`;
   }
 }
 
 /* ============================================================
-   SHARED LIST — one cloud document, no accounts. (jsonstorage.net)
+   SHARED LIST — one cloud document. (jsonbin.io)
    A single JSON document holds every home. Each phone reads it,
    merges its own change in, writes it back. The "code" is the
    document id, so joining = pasting a code — no link that opens Safari.
-   jsonstorage returns the new id in the response BODY (not a header),
-   which is why this works from GitHub Pages where header reads are blocked.
+   jsonbin returns the new id in the response BODY (not a header), which is
+   why this works from GitHub Pages where cross-origin header reads are blocked.
+   The share code is "BINID:MASTERKEY" so the partner needs no setup of their own.
    ============================================================ */
-const JS_BASE = "https://api.jsonstorage.net/v1/json";
-let BIN = ls("bin", null);            /* "userId/itemId" = the share code */
+const JB_BASE = "https://api.jsonbin.io/v3/b";
+let BIN = ls("bin", null);            /* share code = "BINID:MASTERKEY" */
+const binId  = code => String(code||"").split(":")[0];
+const binKey = code => String(code||"").split(":").slice(1).join(":");
 let HOMES = [], WHO = ls("who",null);
 let POLL = null, PULLING = false;
 
@@ -1526,29 +1563,31 @@ function setWho(w){
   renderSetup();
 }
 
-/* ---- low-level IO (jsonstorage.net — no auth, CORS, id comes back in the body) ---- */
-async function sGet(bin){
-  const r = await fetch(JS_BASE+"/"+bin, {headers:{Accept:"application/json"}, cache:"no-store"});
+/* ---- low-level IO (jsonbin.io — CORS ok, bin id returned in the body) ---- */
+async function sGet(code){
+  const r = await fetch(JB_BASE+"/"+binId(code)+"/latest",
+    {headers:{"X-Master-Key":binKey(code), "X-Bin-Meta":"false"}, cache:"no-store"});
   if(!r.ok) throw new Error("HTTP "+r.status);
-  return await r.json();
+  return await r.json();                           /* X-Bin-Meta:false -> record only */
 }
-async function sPut(bin, data){
-  const r = await fetch(JS_BASE+"/"+bin, {method:"PUT",
-    headers:{"Content-Type":"application/json", Accept:"application/json"},
+async function sPut(code, data){
+  const r = await fetch(JB_BASE+"/"+binId(code), {method:"PUT",
+    headers:{"Content-Type":"application/json", "X-Master-Key":binKey(code), "X-Bin-Versioning":"false"},
     body:JSON.stringify(data)});
   if(!r.ok) throw new Error("HTTP "+r.status);
   return data;
 }
-/* returns the new "userId/itemId" path, parsed from the response BODY */
-async function sCreate(data){
-  const r = await fetch(JS_BASE, {method:"POST",
-    headers:{"Content-Type":"application/json", Accept:"application/json"},
+/* create a bin; the id comes back in the BODY (metadata.id), not a header */
+async function sCreate(key, data){
+  const r = await fetch(JB_BASE, {method:"POST",
+    headers:{"Content-Type":"application/json", "X-Master-Key":key,
+             "X-Bin-Private":"true", "X-Bin-Versioning":"false", "X-Bin-Name":"KandT-home-list"},
     body:JSON.stringify(data)});
   if(!r.ok) throw new Error("HTTP "+r.status);
-  const j = await r.json();                       /* { uri: ".../v1/json/USER/ITEM" } */
-  const m = (j.uri||"").match(/\/v1\/json\/([^\/?#]+\/[^\/?#]+)/);
-  if(!m) throw new Error("no-id");
-  return m[1];
+  const j = await r.json();
+  const id = j?.metadata?.id;
+  if(!id) throw new Error("no-id");
+  return id + ":" + key;                           /* the full share code */
 }
 const nowDoc = () => ({v:1, homes:{}, touched:Date.now()});
 /* Merge two docs. Union homes by id; for a home both sides touched, combine
@@ -1581,31 +1620,41 @@ const liveHomes = doc => Object.values(doc.homes||{}).filter(h=>!h._del)
 /* ---- setup: create / join ---- */
 async function createList(){
   if(!WHO){ toast("First tap Travis or Kaylin above."); return; }
+  const key = (($("synckey") && $("synckey").value) || ls("synckey","") || "").trim();
+  if(!key){
+    if($("keysetup")) $("keysetup").open = true;
+    toast("Paste your free sync key first — the 30-second step just above. 👆", 5500);
+    return;
+  }
+  lset("synckey", key);
   toast("Setting up…");
   try{
-    const id = await sCreate(nowDoc());
-    await sGet(id);                        /* verify round-trip before trusting it */
-    BIN = id; lset("bin", id);
+    const code = await sCreate(key, nowDoc());   /* id comes back in the body */
+    await sGet(code);                            /* verify round-trip before trusting it */
+    BIN = code; lset("bin", code);
     DOC = nowDoc();
     afterConnect(true);
     toast("Your list is ready. Send your partner the code 💚");
   }catch(e){
-    toast("Couldn't set up the list ("+esc(e.message)+"). Check your connection and try again.", 5000);
+    const m = String(e.message).includes("401") || String(e.message).includes("403")
+      ? "That key wasn't accepted. Copy the Master Key from jsonbin.io → API Keys and paste it again."
+      : "Couldn't set up the list ("+esc(e.message)+"). Check your connection and try again.";
+    toast(m, 6000);
   }
 }
 async function joinList(code){
-  code = (code||"").trim().replace(/^.*\/v1\/json\//,"").replace(/[?#].*$/,"").replace(/^\/+|\/+$/g,"");
-  if(!/^[^\/]+\/[^\/]+$/.test(code)){ toast("Paste the whole code your partner sent (it has a slash in it)."); return; }
+  code = (code||"").trim();
+  if(!/^[^:\s]+:[^:\s]+/.test(code)){ toast("Paste the whole code your partner sent — it has a colon in the middle."); return; }
   if(!WHO) setWho("kaylin");
   toast("Joining…");
   try{
     const d = await sGet(code);
     BIN = code; lset("bin", code);
-    DOC = d && d.homes ? d : nowDoc();
+    DOC = (d && d.homes) ? d : nowDoc();
     afterConnect(true);
     toast("Connected 💚 You're both on the same list now.");
   }catch(e){
-    toast("That code didn't work. Copy it again from your partner's Send button.", 5000);
+    toast("That code didn't work. Have your partner copy it again from their Send button.", 5000);
   }
 }
 function afterConnect(fresh){
@@ -2065,7 +2114,7 @@ async function diag(){
     return (j.elements||[]).length+" found"; });
   await test("OSRM (commute)", async()=>{
     const m = await drive(39.96,-83.00,{lat:40.09,lng:-83.14}); return m ? m+" min" : "no route"; });
-  await test("Shared list (jsonstorage)", async()=>{
+  await test("Shared list (jsonbin)", async()=>{
     if(!BIN) throw new Error("not set up yet");
     await sGet(BIN); return "OK — "+HOMES.length+" home(s)"; });
   $("diag").innerHTML = `<div class="led" style="margin-top:12px">` + t.map(([n,ok,m])=>
@@ -2077,9 +2126,10 @@ async function diag(){
 
 /* ---------- boot ---------- */
 (function boot(){
-  const codeHash = location.hash.match(/#(?:join|code)=(\d+)/);
+  const codeHash = location.hash.match(/#(?:join|code)=([^&\s]+)/);
   if(codeHash && !BIN){ joinList(codeHash[1]); history.replaceState(null,"",location.pathname); }
   if(WHO) setWho(WHO);
+  if($("synckey") && ls("synckey","")) $("synckey").value = ls("synckey","");
   if(BIN) afterConnect();
   const v = (id,k) => { const x=ls(k,null); if(x!=null && $(id)) $(id).value=x; };
   v("m-budget","budget"); v("m-cash","cash"); v("m-rate","rate"); v("m-down","down"); v("m-rent","rent");
